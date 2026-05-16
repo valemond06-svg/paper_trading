@@ -1,8 +1,8 @@
 {
   "paused": false,
   "last_prices": {
-    "BNBUSDT": 656.72,
-    "BTCUSDT": 78226.29
+    "BNBUSDT": 656.75,
+    "BTCUSDT": 78224.7
   },
   "notified_trade_ids": [
     "00368c4d",
@@ -16,6 +16,6 @@
   ],
   "telegram_offset": 191752528,
   "notifications_bootstrapped": true,
-  "last_summary_text": "INTEGRATION MANAGER STATUS\nEquity: 970.46\nCash: 0.08\nDrawdown: 4.49%\nDaily loss: 0.00%\nOpen positions: 2\nPaused: False\nPause reason: none\nPaused until: none\nConsecutive losses: 3\nLast price symbols: BNBUSDT, BTCUSDT",
-  "updated_at": "2026-05-16T22:38:58.040171+00:00"
+  "last_summary_text": "INTEGRATION MANAGER STATUS\nEquity: 970.50\nCash: 0.08\nDrawdown: 4.48%\nDaily loss: 0.00%\nOpen positions: 2\nPaused: False\nPause reason: none\nPaused until: none\nConsecutive losses: 3\nLast price symbols: BNBUSDT, BTCUSDT",
+  "updated_at": "2026-05-16T22:43:59.151154+00:00"
 }

@@ -1,0 +1,55 @@
+{
+  "total_candidates": 2,
+  "selected_candidates": 2,
+  "allocation_mode": "score_weighted_risk_adjusted",
+  "base_risk_per_trade": 0.01,
+  "max_portfolio_risk": 0.03,
+  "rebalance_frequency": "daily",
+  "drawdown_rules": {
+    "dd_3pct": "reduce all weights by 20%",
+    "dd_5pct": "reduce all weights by 40%",
+    "dd_7pct": "pause new entries and review"
+  },
+  "selected": [
+    {
+      "asset": "BNBUSDT",
+      "timeframe": "1h",
+      "strategy": "SmaCrossRegime",
+      "fast": 15,
+      "slow": 45,
+      "regime": 200,
+      "final_score": 0.5234614096750324,
+      "allocation_score": 0.45908130356235577,
+      "target_weight": 0.803448968723516,
+      "risk_per_trade": 0.01,
+      "max_concurrent": 2,
+      "profit_factor": 2.133667983713506,
+      "net_return": 0.007867983875698,
+      "max_drawdown": -0.013824666234911,
+      "sharpe": 26.095560697273047,
+      "avg_test_return": 0.0,
+      "positive_window_ratio": 0.0,
+      "trades": 9
+    },
+    {
+      "asset": "BNBUSDT",
+      "timeframe": "4h",
+      "strategy": "SmaCrossRegime",
+      "fast": 12,
+      "slow": 36,
+      "regime": 120,
+      "final_score": 0.3619404655294538,
+      "allocation_score": 0.17060974353001296,
+      "target_weight": 0.1965510312764839,
+      "risk_per_trade": 0.004,
+      "max_concurrent": 1,
+      "profit_factor": 1.238718521272324,
+      "net_return": 0.0027121248326704,
+      "max_drawdown": -0.0292665153738257,
+      "sharpe": 4.062511879821426,
+      "avg_test_return": 0.0,
+      "positive_window_ratio": 0.0,
+      "trades": 15
+    }
+  ]
+}

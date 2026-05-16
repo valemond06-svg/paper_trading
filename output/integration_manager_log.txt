@@ -1,1 +1,0 @@
-$(cat /tmp/integration_manager_log_clean.txt | base64)

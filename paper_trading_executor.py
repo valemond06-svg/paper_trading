@@ -304,6 +304,12 @@ class PaperTradingBot:
         fees = pos.quantity * pos.entry_price * FEE_PCT + pos.quantity * exit_price * FEE_PCT
         net = gross - fees
 
+        self.log(
+            f"CLOSE {symbol} reason={reason} trigger_price={price:.4f} "
+            f"exit={exit_price:.4f} stop={pos.stop_price:.4f} tp={pos.take_profit:.4f} "
+            f"entry={pos.entry_price:.4f} gross={gross:.4f} net={net:.4f}"
+        )
+
         self.cash += pos.quantity * exit_price - pos.quantity * exit_price * FEE_PCT
         self.realized_pnl += net
         self.consecutive_losses = self.consecutive_losses + 1 if net < 0 else 0
@@ -324,16 +330,14 @@ class PaperTradingBot:
             fees=fees,
             reason=reason,
         )
-
         self.trade_history.append(trade)
         del self.positions[symbol]
 
         self.update_equity()
-        self.save_trades()
         self.save_state()
-
+        self.save_trades()
         self.log(
-            f"CLOSE {symbol} reason={reason} net={net:.4f} gross={gross:.4f} "
+            f"CLOSE DONE {symbol} reason={reason} net={net:.4f} gross={gross:.4f} "
             f"fees={fees:.4f} equity={self.equity:.2f}"
         )
         return trade

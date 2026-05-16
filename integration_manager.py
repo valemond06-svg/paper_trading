@@ -433,8 +433,7 @@ class IntegrationManager:
 
 async def _main() -> None:
     manager = IntegrationManager()
-    await manager.run_forever(poll_seconds=DEFAULT_POLL_SECONDS)
-
+    await manager.cycle_once()
 
 if __name__ == "__main__":
     try:

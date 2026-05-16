@@ -47,6 +47,7 @@ class IntegrationManager:
 
         self.notified_trade_ids: Set[str] = set()
         self.notified_open_symbols: Set[str] = set()
+        self.notifications_bootstrapped = False
 
         self.load_state()
         self._bootstrap_notification_state()
@@ -73,6 +74,7 @@ class IntegrationManager:
         self.notified_trade_ids = set(state.get("notified_trade_ids", []))
         self.notified_open_symbols = set(state.get("notified_open_symbols", []))
         self.telegram_offset = state.get("telegram_offset")
+        self.notifications_bootstrapped = bool(state.get("notifications_bootstrapped", False))
 
     def save_state(self) -> None:
         state = {
@@ -81,19 +83,23 @@ class IntegrationManager:
             "notified_trade_ids": sorted(self.notified_trade_ids),
             "notified_open_symbols": sorted(self.notified_open_symbols),
             "telegram_offset": self.telegram_offset,
+            "notifications_bootstrapped": self.notifications_bootstrapped,
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
         self._atomic_write_text(MANAGER_STATE, json.dumps(state, indent=2))
 
     def _bootstrap_notification_state(self) -> None:
-        if not self.notified_open_symbols:
-            self.notified_open_symbols = set(self.executor.positions.keys())
+        if self.notifications_bootstrapped:
+            return
+
+        self.notified_open_symbols = set(self.executor.positions.keys())
 
         for trade in self.executor.trade_history:
             trade_id = getattr(trade, "trade_id", None)
             if trade_id:
                 self.notified_trade_ids.add(trade_id)
 
+        self.notifications_bootstrapped = True
         self.save_state()
 
     def telegram_api_url(self, method: str) -> str:

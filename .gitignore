@@ -1,6 +1,15 @@
 .env
 output/*
-!output/papertradingplan.json
+!output/
+!output/paper_trading_plan.json
+!output/paper_trading_state.json
+!output/paper_trading_runtime.json
+!output/paper_trading_trades.csv
+!output/paper_trading_log.txt
+!output/integration_manager_state.json
+!output/integration_manager_log.txt
+!output/integration_bundle.json
+!output/price_feed_state.json
 __pycache__/
 *.pyc
 archive_legacy_backup.zip

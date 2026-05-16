@@ -1,0 +1,61 @@
+{
+  "cash": 2.079856982968863,
+  "equity": 1007.0415826619454,
+  "peakequity": 1016.0333923359659,
+  "dailystartequity": 1000.0,
+  "paused": false,
+  "consecutivelosses": 0,
+  "realizedpnl": 3.4153348293079695,
+  "positions": {
+    "BNBUSDT1hSmaCrossRegime1545200": {
+      "symbol": "BNBUSDT1hSmaCrossRegime1545200",
+      "asset": "BNBUSDT",
+      "timeframe": "1h",
+      "strategy": "SmaCrossRegime",
+      "side": "long",
+      "quantity": 0.7521985149397752,
+      "entry_price": 676.868265,
+      "stop_price": 663.3308996999999,
+      "take_profit": 697.17431295,
+      "opened_at": "2026-05-14T14:15:19.155034+00:00",
+      "target_weight": 0.5096489526955578,
+      "risk_per_trade": 0.01
+    },
+    "BNBUSDT4hSmaCrossRegime1236120": {
+      "symbol": "BNBUSDT4hSmaCrossRegime1236120",
+      "asset": "BNBUSDT",
+      "timeframe": "4h",
+      "strategy": "SmaCrossRegime",
+      "side": "long",
+      "quantity": 0.34079726756471324,
+      "entry_price": 676.868265,
+      "stop_price": 670.09958235,
+      "take_profit": 687.0212889749998,
+      "opened_at": "2026-05-14T14:15:19.156912+00:00",
+      "target_weight": 0.23108341430986593,
+      "risk_per_trade": 0.0046
+    },
+    "BTCUSDT1hSmaCrossRegime1545200": {
+      "symbol": "BTCUSDT1hSmaCrossRegime1545200",
+      "asset": "BTCUSDT",
+      "timeframe": "1h",
+      "strategy": "SmaCrossRegime",
+      "side": "long",
+      "quantity": 0.003207687170553167,
+      "entry_price": 81298.60899,
+      "stop_price": 80453.103456504,
+      "take_profit": 82566.867290244,
+      "opened_at": "2026-05-14T15:52:55.793582+00:00",
+      "target_weight": 0.2592676329945763,
+      "risk_per_trade": 0.0052
+    }
+  },
+  "lastprices": {
+    "BNBUSDT": 680.39,
+    "BTCUSDT": 81460.04,
+    "BNBUSDT1hSmaCrossRegime1545200": 680.39,
+    "BNBUSDT4hSmaCrossRegime1236120": 680.39,
+    "BTCUSDT1hSmaCrossRegime1545200": 81460.04
+  },
+  "updatedat": "2026-05-14T21:36:42.130673+00:00"
+}

@@ -1,0 +1,2 @@
+trade_id,timestamp,symbol,asset,timeframe,strategy,side,quantity,entry_price,exit_price,gross_pnl,net_pnl,fees,reason
+46079129,2026-05-14T15:52:55.746933+00:00,BTCUSDT1hSmaCrossRegime1545200,BTCUSDT,1h,SmaCrossRegime,long,0.003235926601016589,80000.690355,81217.35101,3.937024577924766,3.4153348293079695,0.5216897486167963,takeprofit

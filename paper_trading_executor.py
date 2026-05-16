@@ -330,12 +330,14 @@ class PaperTradingBot:
             fees=fees,
             reason=reason,
         )
+
         self.trade_history.append(trade)
         del self.positions[symbol]
 
         self.update_equity()
-        self.save_state()
         self.save_trades()
+        self.save_state()
+
         self.log(
             f"CLOSE DONE {symbol} reason={reason} net={net:.4f} gross={gross:.4f} "
             f"fees={fees:.4f} equity={self.equity:.2f}"

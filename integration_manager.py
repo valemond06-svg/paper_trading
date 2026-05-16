@@ -432,11 +432,68 @@ class IntegrationManager:
             )
         else:
             await self.manager_loop(poll_seconds=poll_seconds)
+        async def run_budgeted(self, run_budget_seconds: int = RUN_BUDGET_SECONDS) -> None:
+            started_at = datetime.now(timezone.utc)
+            deadline_ts = asyncio.get_running_loop().time() + max(1, run_budget_seconds - SAFETY_MARGIN_SECONDS)
+
+            self.log(
+                f"Budgeted run started (budget={run_budget_seconds}s, "
+                f"sleep={RUN_SLEEP_SECONDS}s, safety_margin={SAFETY_MARGIN_SECONDS}s)"
+            )
+
+            if self.telegram_enabled:
+                await asyncio.to_thread(
+                    self.send_telegram_message,
+                    f"Integration manager started.\n"
+                    f"Budget: {run_budget_seconds}s\n"
+                    f"Poll: {RUN_SLEEP_SECONDS}s",
+                )
+
+        cycle_count = 0
+
+        while True:
+            now_ts = asyncio.get_running_loop().time()
+            if now_ts >= deadline_ts:
+                break
+
+            try:
+                await self.cycle_once()
+                cycle_count += 1
+            except Exception as e:
+                err = f"Manager error: {e}"
+                self.log(err)
+                if self.telegram_enabled:
+                    await asyncio.to_thread(self.send_telegram_message, err)
+
+            now_ts = asyncio.get_running_loop().time()
+            if now_ts >= deadline_ts:
+                break
+
+            remaining = deadline_ts - now_ts
+            sleep_for = min(RUN_SLEEP_SECONDS, max(0, remaining))
+            if sleep_for > 0:
+                await asyncio.sleep(sleep_for)
+
+        finished_at = datetime.now(timezone.utc)
+        duration = (finished_at - started_at).total_seconds()
+
+        final_msg = (
+            f"Budgeted run finished.\n"
+            f"Cycles: {cycle_count}\n"
+            f"Duration: {duration:.1f}s\n"
+            f"{self.summary_text()}"
+        )
+
+        self.log(final_msg.replace("\n", " | "))
+        self.save_state()
+
+        if self.telegram_enabled:
+            await asyncio.to_thread(self.send_telegram_message, final_msg)
 
 
 async def _main() -> None:
     manager = IntegrationManager()
-    await manager.cycle_once()
+    await manager.run_budgeted(run_budget_seconds=RUN_BUDGET_SECONDS)
 
 if __name__ == "__main__":
     try:

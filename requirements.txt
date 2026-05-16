@@ -2,3 +2,5 @@ pandas
 aiohttp
 python-dotenv
 numpy
+requests
+python-dotenv

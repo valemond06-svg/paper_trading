@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Set
@@ -31,6 +32,22 @@ TELEGRAM_POLL_SLEEP = 1.0
 RUN_BUDGET_SECONDS = 270
 RUN_SLEEP_SECONDS = DEFAULT_POLL_SECONDS
 SAFETY_MARGIN_SECONDS = 10
+
+# ─── Security helper ──────────────────────────────────────────────────────────
+# Redacta token Telegram da qualsiasi stringa prima che venga scritta nei log.
+_TOKEN_RE = re.compile(r"\b\d{6,}:[A-Za-z0-9_\-]{20,}\b")
+_URL_TOKEN_RE = re.compile(r"(https?://api\.telegram\.org/bot)[^/\s\"']+")
+
+
+def _redact(text: str) -> str:
+    """Sostituisce token Telegram (e URL che li contengono) con ***REDACTED***."""
+    if not text:
+        return text
+    text = _TOKEN_RE.sub("***REDACTED***", str(text))
+    text = _URL_TOKEN_RE.sub(r"\1***REDACTED***", text)
+    if TELEGRAM_BOT_TOKEN:
+        text = text.replace(TELEGRAM_BOT_TOKEN, "***REDACTED***")
+    return text
 
 
 class IntegrationManager:
@@ -67,7 +84,9 @@ class IntegrationManager:
         tmp_path.replace(path)
 
     def log(self, message: str) -> None:
-        line = f"{self._now_iso()} | {message}"
+        # Redacta segreti PRIMA di scrivere su file o stampare
+        safe = _redact(str(message))
+        line = f"{self._now_iso()} | {safe}"
         with MANAGER_LOG.open("a", encoding="utf-8") as f:
             f.write(line + "\n")
         print(line)

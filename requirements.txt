@@ -1,6 +1,8 @@
 pandas
-aiohttp
-python-dotenv
 numpy
 requests
+aiohttp
 python-dotenv
+ccxt
+yfinance
+plotly

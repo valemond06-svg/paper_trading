@@ -41653,3 +41653,465 @@ Paused: True
 Consecutive losses: 3
 Last price symbols: BNBUSDT, BTCUSDT
 2026-05-16T13:19:54.829782+00:00 | Budgeted run finished | cycles=51 | duration=260.0s
+2026-05-16T13:25:30.532975+00:00 | Integration manager initialized
+2026-05-16T13:25:30.533036+00:00 | Budgeted run started (budget=270s, sleep=5s, safety_margin=10s)
+2026-05-16T13:25:31.487774+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:25:36.649503+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:25:41.810558+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:25:46.972550+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:25:52.134328+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:25:57.296031+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:26:02.458258+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:26:07.619571+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:26:12.776543+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:26:17.937752+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:26:23.098916+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:26:28.260131+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:26:33.422520+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:26:38.580908+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:26:43.742268+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:26:48.904259+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:26:54.078003+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:26:59.240349+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:27:04.402693+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:27:09.564285+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:27:14.725579+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:27:19.886830+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:27:25.048226+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:27:30.210192+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:27:35.371758+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:27:40.532657+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:27:45.694174+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:27:50.856391+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:27:56.018161+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:28:01.176130+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:28:06.337887+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:28:11.499535+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:28:16.661509+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:28:21.823417+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:28:26.984836+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:28:32.146425+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:28:37.308104+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:28:42.470033+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:28:47.631541+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:28:52.793259+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:28:57.954157+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:29:03.114238+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:29:08.275765+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:29:13.437009+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:29:18.598030+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:29:23.758689+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:29:28.918819+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:29:34.080617+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:29:39.240131+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:29:44.404167+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:29:49.566369+00:00 | INTEGRATION MANAGER STATUS
+Equity: 964.53
+Cash: 964.53
+Drawdown: 5.07%
+Daily loss: 3.55%
+Open positions: 0
+Paused: True
+Consecutive losses: 3
+Last price symbols: BNBUSDT, BTCUSDT
+2026-05-16T13:29:50.536226+00:00 | Budgeted run finished | cycles=51 | duration=260.0s

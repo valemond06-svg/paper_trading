@@ -246,3 +246,5 @@
 2026-05-16T13:19:48.757759+00:00 | Risk stop triggered
 2026-05-16T13:19:53.920804+00:00 | Risk stop triggered
 2026-05-16T13:19:53.921378+00:00 | Risk stop triggered
+2026-05-16T13:25:30.532739+00:00 | Bot initialized
+2026-05-16T13:25:31.484006+00:00 | Risk stop triggered: daily_loss=3.55% >= 2.00%

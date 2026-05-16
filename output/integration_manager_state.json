@@ -1,8 +1,8 @@
 {
   "paused": false,
   "last_prices": {
-    "BNBUSDT": 653.03,
-    "BTCUSDT": 77980.0
+    "BNBUSDT": 652.99,
+    "BTCUSDT": 77964.34
   },
   "notified_trade_ids": [
     "00368c4d",
@@ -13,5 +13,5 @@
   "notified_open_symbols": [],
   "telegram_offset": 191752528,
   "notifications_bootstrapped": true,
-  "updated_at": "2026-05-16T13:19:54.829591+00:00"
+  "updated_at": "2026-05-16T13:29:50.536045+00:00"
 }

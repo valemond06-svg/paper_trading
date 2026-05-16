@@ -1,0 +1,36 @@
+{
+  "botname": "market_data_lab",
+  "mode": "paper_trading",
+  "timezone": "Europe/Rome",
+  "telegram": {
+    "enabled": true,
+    "commands": [
+      "start",
+      "status",
+      "positions",
+      "trades",
+      "pause",
+      "resume",
+      "report",
+      "cycle",
+      "help"
+    ]
+  },
+  "alerts": {
+    "drawdownwarn": 0.03,
+    "drawdownstop": 0.05,
+    "drawdownhardstop": 0.07,
+    "dailylosswarn": 0.01,
+    "dailylossstop": 0.02,
+    "consecutivelosseswarn": 3,
+    "consecutivelossesstop": 5
+  },
+  "files": {
+    "plan": "output/paper_trading_plan.json",
+    "feedstate": "output/price_feed_state.json",
+    "executorstate": "output/paper_trading_state.json",
+    "runtime": "output/paper_trading_runtime.json",
+    "bundle": "output/integration_bundle.json",
+    "managerstate": "output/integration_manager_state.json"
+  }
+}

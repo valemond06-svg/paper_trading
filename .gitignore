@@ -1,0 +1,6 @@
+.env
+output/*
+!output/papertradingplan.json
+__pycache__/
+*.pyc
+archive_legacy_backup.zip

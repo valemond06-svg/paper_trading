@@ -5,13 +5,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Optional
 
-import ccxt
+import requests
+
 
 OUT = Path("output")
 OUT.mkdir(exist_ok=True)
 
-FEEDSTATEJSON = OUT / "price_feed_state.json"
-FEEDLOG = OUT / "price_feed_log.txt"
+FEED_STATE_JSON = OUT / "price_feed_state.json"
+FEED_LOG = OUT / "price_feed_log.txt"
+
+BINANCE_DATA_API_BASE = "https://data-api.binance.vision"
+REQUEST_TIMEOUT = 20
 
 
 @dataclass
@@ -22,31 +26,52 @@ class FeedSnapshot:
 
 
 class PriceFeedAdapter:
-    def __init__(self, exchange_id: str = "binance", poll_seconds: int = 15):
+    def __init__(self, exchange_id: str = "binance-data", poll_seconds: int = 15):
         self.exchange_id = exchange_id
         self.poll_seconds = poll_seconds
         self.asset_map = {
-            "BNBUSDT": "BNB/USDT",
-            "BTCUSDT": "BTC/USDT",
+            "BNBUSDT": "BNBUSDT",
+            "BTCUSDT": "BTCUSDT",
         }
-        self.exchange = getattr(ccxt, exchange_id)({"enableRateLimit": True})
+        self.session = requests.Session()
         self.last_snapshot: Optional[FeedSnapshot] = None
         self.log(f"Adapter initialized for {exchange_id}")
 
     def log(self, message: str) -> None:
         line = f"{datetime.now(timezone.utc).isoformat()} | {message}"
-        with FEEDLOG.open("a", encoding="utf-8") as f:
+        with FEED_LOG.open("a", encoding="utf-8") as f:
             f.write(line + "\n")
         print(line)
 
+    def fetch_all_prices(self) -> Dict[str, float]:
+        resp = self.session.get(
+            f"{BINANCE_DATA_API_BASE}/api/v3/ticker/price",
+            timeout=REQUEST_TIMEOUT,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        if not isinstance(data, list):
+            raise ValueError(f"Unexpected ticker payload: {data}")
+
+        prices_by_symbol = {}
+        for item in data:
+            symbol = item.get("symbol")
+            price = item.get("price")
+            if symbol and price is not None:
+                prices_by_symbol[symbol] = float(price)
+
+        return prices_by_symbol
+
     def fetch_prices_rest(self) -> Dict[str, float]:
-        prices = {}
+        all_prices = self.fetch_all_prices()
+        prices: Dict[str, float] = {}
+
         for asset, symbol in self.asset_map.items():
-            ticker = self.exchange.fetch_ticker(symbol)
-            last = ticker.get("last") or ticker.get("close") or ticker.get("bid") or ticker.get("ask")
-            if last is None:
-                raise ValueError(f"No price for symbol {symbol}")
-            prices[asset] = float(last)
+            if symbol not in all_prices:
+                raise ValueError(f"Missing price for symbol {symbol}")
+            prices[asset] = all_prices[symbol]
+
         return prices
 
     async def fetch_prices_async(self) -> Dict[str, float]:
@@ -60,7 +85,7 @@ class PriceFeedAdapter:
             source=source,
         )
         self.last_snapshot = snap
-        FEEDSTATEJSON.write_text(json.dumps(asdict(snap), indent=2), encoding="utf-8")
+        FEED_STATE_JSON.write_text(json.dumps(asdict(snap), indent=2), encoding="utf-8")
 
     def get_latest_prices(self) -> Dict[str, float]:
         if self.last_snapshot:
@@ -85,11 +110,14 @@ class PriceFeedAdapter:
     def summary_text(self) -> str:
         if not self.last_snapshot:
             return "No price snapshot yet."
+
         lines = [
             "PRICE FEED SNAPSHOT",
             f"Source: {self.last_snapshot.source}",
             f"Timestamp: {self.last_snapshot.timestamp}",
         ]
+
         for asset, price in self.last_snapshot.prices.items():
             lines.append(f"{asset}: {price:.4f}")
+
         return "\n".join(lines)

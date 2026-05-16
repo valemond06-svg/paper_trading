@@ -52,6 +52,11 @@ class IntegrationManager:
         self._bootstrap_notification_state()
         self.log("Integration manager initialized")
 
+    def _atomic_write_text(self, path: Path, text: str) -> None:
+        tmp_path = path.with_suffix(path.suffix + ".tmp")
+        tmp_path.write_text(text, encoding="utf-8")
+        tmp_path.replace(path)
+
     def log(self, message: str) -> None:
         line = f"{datetime.now(timezone.utc).isoformat()} | {message}"
         with MANAGER_LOG.open("a", encoding="utf-8") as f:
@@ -78,7 +83,7 @@ class IntegrationManager:
             "telegram_offset": self.telegram_offset,
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
-        MANAGER_STATE.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        self._atomic_write_text(MANAGER_STATE, json.dumps(state, indent=2))
 
     def _bootstrap_notification_state(self) -> None:
         if not self.notified_open_symbols:
@@ -88,6 +93,8 @@ class IntegrationManager:
             trade_id = getattr(trade, "trade_id", None)
             if trade_id:
                 self.notified_trade_ids.add(trade_id)
+
+        self.save_state()
 
     def telegram_api_url(self, method: str) -> str:
         return f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/{method}"
@@ -143,6 +150,7 @@ class IntegrationManager:
     def sync_prices_to_executor(self, prices: Dict[str, float]) -> None:
         self.last_prices = prices
         self.executor.ingest_prices(prices)
+        self.executor.save_state()
         self.save_state()
 
     def maybe_trade(self) -> None:
@@ -199,10 +207,11 @@ class IntegrationManager:
         for symbol in new_opens:
             self.send_telegram_message(self._format_open_message(symbol))
             self.notified_open_symbols.add(symbol)
+            self.save_state()
 
-        closed_symbols = self.notified_open_symbols - current_open_symbols
-        if closed_symbols:
+        if self.notified_open_symbols - current_open_symbols:
             self.notified_open_symbols = current_open_symbols.copy()
+            self.save_state()
 
         for trade in self.executor.trade_history:
             trade_id = getattr(trade, "trade_id", None)
@@ -210,8 +219,7 @@ class IntegrationManager:
                 continue
             self.send_telegram_message(self._format_close_message(trade))
             self.notified_trade_ids.add(trade_id)
-
-        self.save_state()
+            self.save_state()
 
     async def cycle_once(self) -> None:
         prices = await self.feed.run_once()
@@ -323,17 +331,14 @@ class IntegrationManager:
             ),
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
-        INTEGRATION_BUNDLE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        self._atomic_write_text(INTEGRATION_BUNDLE, json.dumps(data, indent=2))
         return data
 
     async def process_telegram_command(self, text: str) -> Optional[str]:
         cmd = (text or "").strip().lower()
 
         if cmd in ("/start", "start"):
-            return (
-                "Bot online.\n"
-                "Commands: /status /positions /trades /pause /resume /report /cycle /help"
-            )
+            return "Bot online.\nCommands: /status /positions /trades /pause /resume /report /cycle /help"
 
         if cmd in ("/help", "help"):
             return "Commands: /status /positions /trades /pause /resume /report /cycle /help"
@@ -382,6 +387,7 @@ class IntegrationManager:
                     update_id = upd.get("update_id")
                     if update_id is not None:
                         self.telegram_offset = update_id + 1
+                        self.save_state()
 
                     message = upd.get("message", {})
                     chat = message.get("chat", {})
@@ -398,7 +404,6 @@ class IntegrationManager:
                     if response:
                         await asyncio.to_thread(self.send_telegram_message, response)
 
-                self.save_state()
             except Exception as e:
                 self.log(f"Telegram loop error: {e}")
 
@@ -406,12 +411,6 @@ class IntegrationManager:
 
     async def manager_loop(self, poll_seconds: int = DEFAULT_POLL_SECONDS) -> None:
         self.log(f"Integration loop started (poll_seconds={poll_seconds})")
-
-        if self.telegram_enabled:
-            await asyncio.to_thread(
-                self.send_telegram_message,
-                f"Integration manager started.\nPolling every {poll_seconds} seconds.",
-            )
 
         while True:
             try:
@@ -444,14 +443,6 @@ class IntegrationManager:
             f"sleep={RUN_SLEEP_SECONDS}s, safety_margin={SAFETY_MARGIN_SECONDS}s)"
         )
 
-        if self.telegram_enabled:
-            await asyncio.to_thread(
-                self.send_telegram_message,
-                f"Integration manager started.\n"
-                f"Budget: {run_budget_seconds}s\n"
-                f"Poll: {RUN_SLEEP_SECONDS}s",
-            )
-
         cycle_count = 0
 
         while True:
@@ -480,18 +471,14 @@ class IntegrationManager:
         finished_at = datetime.now(timezone.utc)
         duration = (finished_at - started_at).total_seconds()
 
-        final_msg = (
-            f"Budgeted run finished.\n"
-            f"Cycles: {cycle_count}\n"
-            f"Duration: {duration:.1f}s\n"
-            f"{self.summary_text()}"
-        )
-
-        self.log(final_msg.replace("\n", " | "))
+        self.export_bundle()
+        self.executor.export_runtime_report()
+        self.executor.save_state()
         self.save_state()
 
-        if self.telegram_enabled:
-            await asyncio.to_thread(self.send_telegram_message, final_msg)
+        self.log(
+            f"Budgeted run finished | cycles={cycle_count} | duration={duration:.1f}s"
+        )
 
 
 async def _main() -> None:

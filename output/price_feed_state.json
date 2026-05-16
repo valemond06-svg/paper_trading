@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-05-16T21:38:52.375129+00:00",
+  "timestamp": "2026-05-16T21:44:00.144700+00:00",
   "prices": {
-    "BNBUSDT": 657.01,
-    "BTCUSDT": 78275.8
+    "BNBUSDT": 656.92,
+    "BTCUSDT": 78231.98
   },
   "source": "binance-data"
 }

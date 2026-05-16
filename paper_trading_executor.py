@@ -67,8 +67,12 @@ class PaperTradingBot:
 
         self.plan = self.load_plan()
         self.selected = self.plan.get("selected", [])
-        self.max_portfolio_risk = float(self.plan.get("maxportfoliorisk", MAX_PORTFOLIO_RISK))
-        self.base_risk_per_trade = float(self.plan.get("baseriskpertrade", 0.01))
+        self.max_portfolio_risk = float(
+            self.plan.get("maxportfoliorisk", self.plan.get("max_portfolio_risk", MAX_PORTFOLIO_RISK))
+        )
+        self.base_risk_per_trade = float(
+            self.plan.get("baseriskpertrade", self.plan.get("base_risk_per_trade", 0.01))
+        )
 
         self.cash = INITIAL_EQUITY
         self.equity = INITIAL_EQUITY
@@ -83,6 +87,11 @@ class PaperTradingBot:
 
         self.log("Bot initialized")
 
+    def _atomic_write_text(self, path: Path, text: str) -> None:
+        tmp_path = path.with_suffix(path.suffix + ".tmp")
+        tmp_path.write_text(text, encoding="utf-8")
+        tmp_path.replace(path)
+
     def load_plan(self) -> dict:
         if not self.plan_path.exists():
             raise FileNotFoundError(f"Missing paper trading plan: {self.plan_path}")
@@ -94,56 +103,99 @@ class PaperTradingBot:
             f.write(line + "\n")
         print(line)
 
+    def _normalize_position_dict(self, raw: dict) -> dict:
+        raw = dict(raw)
+
+        if "entryprice" in raw:
+            raw["entry_price"] = raw.pop("entryprice")
+        if "stopprice" in raw:
+            raw["stop_price"] = raw.pop("stopprice")
+        if "takeprofit" in raw:
+            raw["take_profit"] = raw.pop("takeprofit")
+        if "openedat" in raw:
+            raw["opened_at"] = raw.pop("openedat")
+        if "targetweight" in raw:
+            raw["target_weight"] = raw.pop("targetweight")
+        if "riskpertrade" in raw:
+            raw["risk_per_trade"] = raw.pop("riskpertrade")
+
+        return raw
+
+    def _normalize_trade_dict(self, raw: dict) -> dict:
+        raw = dict(raw)
+
+        if "tradeid" in raw:
+            raw["trade_id"] = raw.pop("tradeid")
+        if "entryprice" in raw:
+            raw["entry_price"] = raw.pop("entryprice")
+        if "exitprice" in raw:
+            raw["exit_price"] = raw.pop("exitprice")
+        if "grosspnl" in raw:
+            raw["gross_pnl"] = raw.pop("grosspnl")
+        if "netpnl" in raw:
+            raw["net_pnl"] = raw.pop("netpnl")
+
+        return raw
+
     def load_state(self) -> None:
         if not self.state_path.exists():
             return
+
         state = json.loads(self.state_path.read_text(encoding="utf-8"))
+
         self.cash = float(state.get("cash", INITIAL_EQUITY))
         self.equity = float(state.get("equity", INITIAL_EQUITY))
         self.peak_equity = float(state.get("peakequity", state.get("peak_equity", INITIAL_EQUITY)))
-        self.daily_start_equity = float(state.get("dailystartequity", state.get("daily_start_equity", INITIAL_EQUITY)))
+        self.daily_start_equity = float(
+            state.get("dailystartequity", state.get("daily_start_equity", INITIAL_EQUITY))
+        )
         self.paused = bool(state.get("paused", False))
-        self.consecutive_losses = int(state.get("consecutivelosses", state.get("consecutive_losses", 0)))
+        self.consecutive_losses = int(
+            state.get("consecutivelosses", state.get("consecutive_losses", 0))
+        )
         self.realized_pnl = float(state.get("realizedpnl", state.get("realized_pnl", 0.0)))
         self.last_prices = state.get("lastprices", state.get("last_prices", {})) or {}
 
         self.positions = {}
         for sym, pos in state.get("positions", {}).items():
-            raw = dict(pos)
-            if "entryprice" in raw:
-                raw["entry_price"] = raw.pop("entryprice")
-            if "stopprice" in raw:
-                raw["stop_price"] = raw.pop("stopprice")
-            if "takeprofit" in raw:
-                raw["take_profit"] = raw.pop("takeprofit")
-            if "openedat" in raw:
-                raw["opened_at"] = raw.pop("openedat")
-            if "targetweight" in raw:
-                raw["target_weight"] = raw.pop("targetweight")
-            if "riskpertrade" in raw:
-                raw["risk_per_trade"] = raw.pop("riskpertrade")
-            self.positions[sym] = Position(**raw)
+            self.positions[sym] = Position(**self._normalize_position_dict(pos))
+
+        self.trade_history = []
+        raw_trades = state.get("trade_history", state.get("tradehistory", [])) or []
+        for t in raw_trades:
+            self.trade_history.append(Trade(**self._normalize_trade_dict(t)))
 
     def save_state(self) -> None:
         state = {
             "cash": self.cash,
             "equity": self.equity,
+            "peak_equity": self.peak_equity,
+            "daily_start_equity": self.daily_start_equity,
+            "paused": self.paused,
+            "consecutive_losses": self.consecutive_losses,
+            "realized_pnl": self.realized_pnl,
+            "positions": {k: asdict(v) for k, v in self.positions.items()},
+            "trade_history": [asdict(t) for t in self.trade_history],
+            "last_prices": self.last_prices,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
             "peakequity": self.peak_equity,
             "dailystartequity": self.daily_start_equity,
-            "paused": self.paused,
             "consecutivelosses": self.consecutive_losses,
             "realizedpnl": self.realized_pnl,
-            "positions": {k: asdict(v) for k, v in self.positions.items()},
+            "tradehistory": [asdict(t) for t in self.trade_history],
             "lastprices": self.last_prices,
             "updatedat": datetime.now(timezone.utc).isoformat(),
         }
-        self.state_path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        self._atomic_write_text(self.state_path, json.dumps(state, indent=2))
 
     def save_trades(self) -> None:
-        if not self.trade_history:
-            return
-        df = pd.DataFrame([asdict(t) for t in self.trade_history])
-        df.to_csv(self.trades_path, index=False)
+        rows = [asdict(t) for t in self.trade_history]
+        df = pd.DataFrame(rows)
+        csv_text = df.to_csv(index=False) if not df.empty else (
+            "trade_id,timestamp,symbol,asset,timeframe,strategy,side,quantity,"
+            "entry_price,exit_price,gross_pnl,net_pnl,fees,reason\n"
+        )
+        self._atomic_write_text(self.trades_path, csv_text)
 
     def symbol_for_row(self, row: dict) -> str:
         return f"{row['asset']}{row['timeframe']}{row['strategy']}{row['fast']}{row['slow']}{row['regime']}"
@@ -172,6 +224,7 @@ class PaperTradingBot:
             if price is None:
                 price = self.last_prices.get(pos.asset, pos.entry_price)
             pos_value += pos.quantity * price
+
         self.equity = self.cash + pos_value
         self.peak_equity = max(self.peak_equity, self.equity)
 
@@ -185,6 +238,7 @@ class PaperTradingBot:
     def open_position(self, row: dict, price: float) -> Optional[Position]:
         if self.paused or self.should_pause():
             self.paused = True
+            self.save_state()
             self.log("Trading paused by risk rules")
             return None
 
@@ -211,7 +265,6 @@ class PaperTradingBot:
             return None
 
         quantity = max_size_cash / entry_price
-        fee = max_size_cash * FEE_PCT
         self.cash -= max_size_cash
 
         pos = Position(
@@ -228,11 +281,13 @@ class PaperTradingBot:
             target_weight=target_weight,
             risk_per_trade=risk_per_trade,
         )
+
         self.positions[symbol] = pos
         self.last_prices[symbol] = price
         self.last_prices[pos.asset] = price
         self.update_equity()
         self.save_state()
+
         self.log(
             f"OPEN {symbol} qty={quantity:.6f} entry={entry_price:.4f} "
             f"stop={stop_price:.4f} tp={take_profit:.4f} cash={self.cash:.2f}"
@@ -269,12 +324,14 @@ class PaperTradingBot:
             fees=fees,
             reason=reason,
         )
+
         self.trade_history.append(trade)
         del self.positions[symbol]
 
         self.update_equity()
-        self.save_state()
         self.save_trades()
+        self.save_state()
+
         self.log(
             f"CLOSE {symbol} reason={reason} net={net:.4f} gross={gross:.4f} "
             f"fees={fees:.4f} equity={self.equity:.2f}"
@@ -299,7 +356,10 @@ class PaperTradingBot:
 
         if self.should_pause():
             self.paused = True
+            self.save_state()
             self.log("Risk stop triggered")
+        else:
+            self.save_state()
 
     def ingest_prices(self, price_map: Dict[str, float]) -> None:
         for sym, price in price_map.items():
@@ -312,6 +372,7 @@ class PaperTradingBot:
         self.update_equity()
         if self.daily_loss >= DAILY_LOSS_STOP:
             self.paused = True
+            self.save_state()
             self.log("Daily loss stop reached")
             return
 
@@ -334,6 +395,8 @@ class PaperTradingBot:
                 continue
 
             self.open_position(row, last_price)
+
+        self.save_state()
 
     def status(self) -> dict:
         self.update_equity()
@@ -385,9 +448,10 @@ class PaperTradingBot:
             "status": self.status(),
             "positions": [asdict(p) for p in self.positions.values()],
             "trades": [asdict(t) for t in self.trade_history[-20:]],
+            "updated_at": datetime.now(timezone.utc).isoformat(),
             "updatedat": datetime.now(timezone.utc).isoformat(),
         }
-        REPORTJSON.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        self._atomic_write_text(REPORTJSON, json.dumps(data, indent=2))
 
     def run_cycle(self, price_map: Dict[str, float]) -> None:
         self.ingest_prices(price_map)
@@ -395,7 +459,6 @@ class PaperTradingBot:
         self.export_runtime_report()
         self.save_state()
 
-    # alias compat
     def maybe_rebalance_legacy(self) -> None:
         self.maybe_rebalance()
 

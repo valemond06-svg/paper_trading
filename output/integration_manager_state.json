@@ -1,17 +1,17 @@
 {
   "paused": false,
   "last_prices": {
-    "BNBUSDT": 680.39,
-    "BTCUSDT": 81460.04
+    "BNBUSDT": 652.48,
+    "BTCUSDT": 77898.46
   },
   "notified_trade_ids": [
-    "46079129"
+    "00368c4d",
+    "46079129",
+    "553e1ec9",
+    "c0186d0f"
   ],
-  "notified_open_symbols": [
-    "BNBUSDT1hSmaCrossRegime1545200",
-    "BNBUSDT4hSmaCrossRegime1236120",
-    "BTCUSDT1hSmaCrossRegime1545200"
-  ],
+  "notified_open_symbols": [],
   "telegram_offset": 191752528,
-  "updated_at": "2026-05-14T21:36:42.142887+00:00"
+  "notifications_bootstrapped": true,
+  "updated_at": "2026-05-16T13:14:56.164494+00:00"
 }

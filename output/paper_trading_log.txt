@@ -34,3 +34,112 @@
 2026-05-14T15:52:55.794762+00:00 | OPEN BTCUSDT1hSmaCrossRegime1545200 qty=0.003208 entry=81298.6090 stop=80453.1035 tp=82566.8673 cash=2.08
 2026-05-16T08:15:13.186111+00:00 | Bot initialized
 2026-05-16T08:16:28.393040+00:00 | Bot initialized
+2026-05-16T13:10:36.160419+00:00 | Bot initialized
+2026-05-16T13:10:36.960792+00:00 | CLOSE BNBUSDT1hSmaCrossRegime1545200 reason=stoploss trigger_price=652.9700 exit=652.6435 stop=663.3309 tp=697.1743 entry=676.8683 gross=-18.2218 net=-19.2219
+2026-05-16T13:10:36.963883+00:00 | CLOSE DONE BNBUSDT1hSmaCrossRegime1545200 reason=stoploss net=-19.2219 gross=-18.2218 fees=1.0001 equity=985.68
+2026-05-16T13:10:36.963936+00:00 | CLOSE BNBUSDT4hSmaCrossRegime1236120 reason=stoploss trigger_price=652.9700 exit=652.6435 stop=670.0996 tp=687.0213 entry=676.8683 gross=-8.2557 net=-8.7088
+2026-05-16T13:10:36.965762+00:00 | CLOSE DONE BNBUSDT4hSmaCrossRegime1236120 reason=stoploss net=-8.7088 gross=-8.2557 fees=0.4531 equity=976.00
+2026-05-16T13:10:36.966332+00:00 | Risk stop triggered
+2026-05-16T13:10:36.966388+00:00 | CLOSE BTCUSDT1hSmaCrossRegime1545200 reason=stoploss trigger_price=77999.3600 exit=77960.3603 stop=80453.1035 tp=82566.8673 entry=81298.6090 gross=-10.7081 net=-11.2189
+2026-05-16T13:10:36.968310+00:00 | CLOSE DONE BTCUSDT1hSmaCrossRegime1545200 reason=stoploss net=-11.2189 gross=-10.7081 fees=0.5109 equity=964.53
+2026-05-16T13:10:36.968823+00:00 | Risk stop triggered
+2026-05-16T13:10:43.755897+00:00 | Risk stop triggered
+2026-05-16T13:10:43.756434+00:00 | Risk stop triggered
+2026-05-16T13:10:48.882144+00:00 | Risk stop triggered
+2026-05-16T13:10:48.882680+00:00 | Risk stop triggered
+2026-05-16T13:10:54.008256+00:00 | Risk stop triggered
+2026-05-16T13:10:54.008754+00:00 | Risk stop triggered
+2026-05-16T13:10:59.134560+00:00 | Risk stop triggered
+2026-05-16T13:10:59.135040+00:00 | Risk stop triggered
+2026-05-16T13:11:04.260412+00:00 | Risk stop triggered
+2026-05-16T13:11:04.260962+00:00 | Risk stop triggered
+2026-05-16T13:11:09.386572+00:00 | Risk stop triggered
+2026-05-16T13:11:09.387148+00:00 | Risk stop triggered
+2026-05-16T13:11:14.511836+00:00 | Risk stop triggered
+2026-05-16T13:11:14.512378+00:00 | Risk stop triggered
+2026-05-16T13:11:19.637994+00:00 | Risk stop triggered
+2026-05-16T13:11:19.638565+00:00 | Risk stop triggered
+2026-05-16T13:11:24.764105+00:00 | Risk stop triggered
+2026-05-16T13:11:24.764584+00:00 | Risk stop triggered
+2026-05-16T13:11:29.889510+00:00 | Risk stop triggered
+2026-05-16T13:11:29.889995+00:00 | Risk stop triggered
+2026-05-16T13:11:35.010735+00:00 | Risk stop triggered
+2026-05-16T13:11:35.011302+00:00 | Risk stop triggered
+2026-05-16T13:11:40.135852+00:00 | Risk stop triggered
+2026-05-16T13:11:40.136419+00:00 | Risk stop triggered
+2026-05-16T13:11:45.258247+00:00 | Risk stop triggered
+2026-05-16T13:11:45.258719+00:00 | Risk stop triggered
+2026-05-16T13:11:50.384029+00:00 | Risk stop triggered
+2026-05-16T13:11:50.384565+00:00 | Risk stop triggered
+2026-05-16T13:11:55.509367+00:00 | Risk stop triggered
+2026-05-16T13:11:55.509827+00:00 | Risk stop triggered
+2026-05-16T13:12:00.649745+00:00 | Risk stop triggered
+2026-05-16T13:12:00.650256+00:00 | Risk stop triggered
+2026-05-16T13:12:05.775321+00:00 | Risk stop triggered
+2026-05-16T13:12:05.775812+00:00 | Risk stop triggered
+2026-05-16T13:12:10.900853+00:00 | Risk stop triggered
+2026-05-16T13:12:10.901377+00:00 | Risk stop triggered
+2026-05-16T13:12:16.025549+00:00 | Risk stop triggered
+2026-05-16T13:12:16.026098+00:00 | Risk stop triggered
+2026-05-16T13:12:21.150798+00:00 | Risk stop triggered
+2026-05-16T13:12:21.151311+00:00 | Risk stop triggered
+2026-05-16T13:12:26.272515+00:00 | Risk stop triggered
+2026-05-16T13:12:26.272971+00:00 | Risk stop triggered
+2026-05-16T13:12:31.398604+00:00 | Risk stop triggered
+2026-05-16T13:12:31.399189+00:00 | Risk stop triggered
+2026-05-16T13:12:36.524398+00:00 | Risk stop triggered
+2026-05-16T13:12:36.524873+00:00 | Risk stop triggered
+2026-05-16T13:12:41.650383+00:00 | Risk stop triggered
+2026-05-16T13:12:41.650922+00:00 | Risk stop triggered
+2026-05-16T13:12:46.776149+00:00 | Risk stop triggered
+2026-05-16T13:12:46.776653+00:00 | Risk stop triggered
+2026-05-16T13:12:51.901143+00:00 | Risk stop triggered
+2026-05-16T13:12:51.901617+00:00 | Risk stop triggered
+2026-05-16T13:12:57.026380+00:00 | Risk stop triggered
+2026-05-16T13:12:57.026882+00:00 | Risk stop triggered
+2026-05-16T13:13:02.151406+00:00 | Risk stop triggered
+2026-05-16T13:13:02.151892+00:00 | Risk stop triggered
+2026-05-16T13:13:07.277127+00:00 | Risk stop triggered
+2026-05-16T13:13:07.277617+00:00 | Risk stop triggered
+2026-05-16T13:13:12.402922+00:00 | Risk stop triggered
+2026-05-16T13:13:12.403471+00:00 | Risk stop triggered
+2026-05-16T13:13:17.527919+00:00 | Risk stop triggered
+2026-05-16T13:13:17.528446+00:00 | Risk stop triggered
+2026-05-16T13:13:22.653422+00:00 | Risk stop triggered
+2026-05-16T13:13:22.653902+00:00 | Risk stop triggered
+2026-05-16T13:13:27.778567+00:00 | Risk stop triggered
+2026-05-16T13:13:27.779092+00:00 | Risk stop triggered
+2026-05-16T13:13:32.904427+00:00 | Risk stop triggered
+2026-05-16T13:13:32.904924+00:00 | Risk stop triggered
+2026-05-16T13:13:38.030248+00:00 | Risk stop triggered
+2026-05-16T13:13:38.030728+00:00 | Risk stop triggered
+2026-05-16T13:13:43.156243+00:00 | Risk stop triggered
+2026-05-16T13:13:43.156948+00:00 | Risk stop triggered
+2026-05-16T13:13:48.281984+00:00 | Risk stop triggered
+2026-05-16T13:13:48.282506+00:00 | Risk stop triggered
+2026-05-16T13:13:53.407173+00:00 | Risk stop triggered
+2026-05-16T13:13:53.407670+00:00 | Risk stop triggered
+2026-05-16T13:13:58.532124+00:00 | Risk stop triggered
+2026-05-16T13:13:58.532665+00:00 | Risk stop triggered
+2026-05-16T13:14:03.657991+00:00 | Risk stop triggered
+2026-05-16T13:14:03.658534+00:00 | Risk stop triggered
+2026-05-16T13:14:08.783929+00:00 | Risk stop triggered
+2026-05-16T13:14:08.784451+00:00 | Risk stop triggered
+2026-05-16T13:14:13.909308+00:00 | Risk stop triggered
+2026-05-16T13:14:13.909831+00:00 | Risk stop triggered
+2026-05-16T13:14:19.034838+00:00 | Risk stop triggered
+2026-05-16T13:14:19.035373+00:00 | Risk stop triggered
+2026-05-16T13:14:24.159599+00:00 | Risk stop triggered
+2026-05-16T13:14:24.160100+00:00 | Risk stop triggered
+2026-05-16T13:14:29.284884+00:00 | Risk stop triggered
+2026-05-16T13:14:29.285411+00:00 | Risk stop triggered
+2026-05-16T13:14:34.410812+00:00 | Risk stop triggered
+2026-05-16T13:14:34.411340+00:00 | Risk stop triggered
+2026-05-16T13:14:39.536043+00:00 | Risk stop triggered
+2026-05-16T13:14:39.536581+00:00 | Risk stop triggered
+2026-05-16T13:14:44.661854+00:00 | Risk stop triggered
+2026-05-16T13:14:44.662369+00:00 | Risk stop triggered
+2026-05-16T13:14:49.787641+00:00 | Risk stop triggered
+2026-05-16T13:14:49.788184+00:00 | Risk stop triggered
+2026-05-16T13:14:54.913170+00:00 | Risk stop triggered
+2026-05-16T13:14:54.913644+00:00 | Risk stop triggered

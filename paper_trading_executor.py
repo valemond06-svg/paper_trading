@@ -14,7 +14,7 @@ PLANJSON = OUT / "paper_trading_plan.json"
 REPORTJSON = OUT / "paper_trading_runtime.json"
 TRADESCSV = OUT / "paper_trading_trades.csv"
 STATEJSON = OUT / "paper_trading_state.json"
-LOGTXT = OUT / "paper_trading_log.txt"
+LOGTXT = OUT / "paper_trading_log.jsonl"
 
 INITIAL_EQUITY = 1000.0
 FEE_PCT = 0.001
@@ -92,6 +92,9 @@ class PaperTradingBot:
         self.consecutive_losses = 0
         self.realized_pnl = 0.0
         self.symbol_cooldowns: Dict[str, str] = {}
+
+        # Flag per deduplicare il log del risk stop (Task A fix)
+        self._risk_stop_active = False
 
         self.log("Bot initialized")
 
@@ -188,6 +191,9 @@ class PaperTradingBot:
         self.last_prices = state.get("lastprices", state.get("last_prices", {})) or {}
         self.symbol_cooldowns = state.get("symbol_cooldowns", state.get("symbolcooldowns", {})) or {}
 
+        # Ripristina il flag _risk_stop_active dallo stato salvato
+        self._risk_stop_active = bool(state.get("risk_stop_active", self.paused))
+
         self.positions = {}
         for sym, pos in state.get("positions", {}).items():
             self.positions[sym] = Position(**self._normalize_position_dict(pos))
@@ -215,6 +221,7 @@ class PaperTradingBot:
             "trade_history": [asdict(t) for t in self.trade_history],
             "last_prices": self.last_prices,
             "symbol_cooldowns": self.symbol_cooldowns,
+            "risk_stop_active": self._risk_stop_active,
             "updated_at": now,
             "peakequity": self.peak_equity,
             "dailystartequity": self.daily_start_equity,
@@ -288,6 +295,10 @@ class PaperTradingBot:
                 self.pause_reason = ""
                 self.paused_until = ""
                 self.clear_log_once()
+                # Deattiva il flag risk stop al reset giornaliero
+                if self._risk_stop_active:
+                    self._risk_stop_active = False
+                    self.log("Risk stop deactivated")
                 self.log("Daily baseline reset; daily loss pause cleared")
 
         self.save_state()
@@ -307,6 +318,10 @@ class PaperTradingBot:
             self.pause_reason = ""
             self.paused_until = ""
             self.clear_log_once()
+            # Deattiva il flag risk stop alla scadenza del cooldown
+            if self._risk_stop_active:
+                self._risk_stop_active = False
+                self.log("Risk stop deactivated")
             self.save_state()
             self.log(f"Pause expired automatically (previous reason: {old_reason})")
 
@@ -315,7 +330,10 @@ class PaperTradingBot:
         self.pause_reason = reason
         if cooldown_seconds > 0:
             self.paused_until = (self.now_utc() + timedelta(seconds=cooldown_seconds)).isoformat()
-        self.log_once(reason, log_message)
+        # Logga il risk stop UNA SOLA VOLTA al momento dell'attivazione
+        if not self._risk_stop_active:
+            self._risk_stop_active = True
+            self.log(log_message)
         self.save_state()
 
     def should_pause(self) -> bool:
@@ -536,6 +554,10 @@ class PaperTradingBot:
         self.pause_reason = ""
         self.paused_until = ""
         self.clear_log_once()
+        # Deattiva il flag risk stop al resume manuale
+        if self._risk_stop_active:
+            self._risk_stop_active = False
+            self.log("Risk stop deactivated")
         self.save_state()
         self.log("Trading resumed manually")
 

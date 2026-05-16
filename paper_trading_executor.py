@@ -22,6 +22,7 @@ SLIPPAGE_PCT = 0.0005
 MAX_PORTFOLIO_RISK = 0.03
 MAX_DRAWDOWN_STOP = 0.07
 DAILY_LOSS_STOP = 0.02
+REENTRY_COOLDOWN_SECONDS = 1800
 
 
 @dataclass
@@ -82,8 +83,11 @@ class PaperTradingBot:
         self.trade_history: List[Trade] = []
         self.last_prices: Dict[str, float] = {}
         self.paused = False
+        self.pause_reason = ""
+        self.last_risk_event = ""
         self.consecutive_losses = 0
         self.realized_pnl = 0.0
+        self.symbol_cooldowns: Dict[str, str] = {}
 
         self.log("Bot initialized")
 
@@ -92,20 +96,42 @@ class PaperTradingBot:
         tmp_path.write_text(text, encoding="utf-8")
         tmp_path.replace(path)
 
+    def now_utc(self) -> datetime:
+        return datetime.now(timezone.utc)
+
+    def iso_now(self) -> str:
+        return self.now_utc().isoformat()
+
+    def parse_dt(self, value: str) -> Optional[datetime]:
+        if not value:
+            return None
+        try:
+            return datetime.fromisoformat(value)
+        except Exception:
+            return None
+
     def load_plan(self) -> dict:
         if not self.plan_path.exists():
             raise FileNotFoundError(f"Missing paper trading plan: {self.plan_path}")
         return json.loads(self.plan_path.read_text(encoding="utf-8"))
 
     def log(self, message: str) -> None:
-        line = f"{datetime.now(timezone.utc).isoformat()} | {message}"
+        line = f"{self.iso_now()} | {message}"
         with self.log_path.open("a", encoding="utf-8") as f:
             f.write(line + "\n")
         print(line)
 
+    def log_once(self, key: str, message: str) -> None:
+        if self.last_risk_event == key:
+            return
+        self.last_risk_event = key
+        self.log(message)
+
+    def clear_log_once(self) -> None:
+        self.last_risk_event = ""
+
     def _normalize_position_dict(self, raw: dict) -> dict:
         raw = dict(raw)
-
         if "entryprice" in raw:
             raw["entry_price"] = raw.pop("entryprice")
         if "stopprice" in raw:
@@ -118,12 +144,10 @@ class PaperTradingBot:
             raw["target_weight"] = raw.pop("targetweight")
         if "riskpertrade" in raw:
             raw["risk_per_trade"] = raw.pop("riskpertrade")
-
         return raw
 
     def _normalize_trade_dict(self, raw: dict) -> dict:
         raw = dict(raw)
-
         if "tradeid" in raw:
             raw["trade_id"] = raw.pop("tradeid")
         if "entryprice" in raw:
@@ -134,7 +158,6 @@ class PaperTradingBot:
             raw["gross_pnl"] = raw.pop("grosspnl")
         if "netpnl" in raw:
             raw["net_pnl"] = raw.pop("netpnl")
-
         return raw
 
     def load_state(self) -> None:
@@ -142,7 +165,6 @@ class PaperTradingBot:
             return
 
         state = json.loads(self.state_path.read_text(encoding="utf-8"))
-
         self.cash = float(state.get("cash", INITIAL_EQUITY))
         self.equity = float(state.get("equity", INITIAL_EQUITY))
         self.peak_equity = float(state.get("peakequity", state.get("peak_equity", INITIAL_EQUITY)))
@@ -150,11 +172,12 @@ class PaperTradingBot:
             state.get("dailystartequity", state.get("daily_start_equity", INITIAL_EQUITY))
         )
         self.paused = bool(state.get("paused", False))
-        self.consecutive_losses = int(
-            state.get("consecutivelosses", state.get("consecutive_losses", 0))
-        )
+        self.pause_reason = str(state.get("pause_reason", state.get("pausereason", "")) or "")
+        self.last_risk_event = str(state.get("last_risk_event", state.get("lastriskevent", "")) or "")
+        self.consecutive_losses = int(state.get("consecutivelosses", state.get("consecutive_losses", 0)))
         self.realized_pnl = float(state.get("realizedpnl", state.get("realized_pnl", 0.0)))
         self.last_prices = state.get("lastprices", state.get("last_prices", {})) or {}
+        self.symbol_cooldowns = state.get("symbol_cooldowns", state.get("symbolcooldowns", {})) or {}
 
         self.positions = {}
         for sym, pos in state.get("positions", {}).items():
@@ -172,19 +195,25 @@ class PaperTradingBot:
             "peak_equity": self.peak_equity,
             "daily_start_equity": self.daily_start_equity,
             "paused": self.paused,
+            "pause_reason": self.pause_reason,
+            "last_risk_event": self.last_risk_event,
             "consecutive_losses": self.consecutive_losses,
             "realized_pnl": self.realized_pnl,
             "positions": {k: asdict(v) for k, v in self.positions.items()},
             "trade_history": [asdict(t) for t in self.trade_history],
             "last_prices": self.last_prices,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "symbol_cooldowns": self.symbol_cooldowns,
+            "updated_at": self.iso_now(),
             "peakequity": self.peak_equity,
             "dailystartequity": self.daily_start_equity,
+            "pausereason": self.pause_reason,
+            "lastriskevent": self.last_risk_event,
             "consecutivelosses": self.consecutive_losses,
             "realizedpnl": self.realized_pnl,
             "tradehistory": [asdict(t) for t in self.trade_history],
             "lastprices": self.last_prices,
-            "updatedat": datetime.now(timezone.utc).isoformat(),
+            "symbolcooldowns": self.symbol_cooldowns,
+            "updatedat": self.iso_now(),
         }
         self._atomic_write_text(self.state_path, json.dumps(state, indent=2))
 
@@ -198,6 +227,8 @@ class PaperTradingBot:
         self._atomic_write_text(self.trades_path, csv_text)
 
     def symbol_for_row(self, row: dict) -> str:
+        if "symbol" in row and row["symbol"]:
+            return str(row["symbol"])
         return f"{row['asset']}{row['timeframe']}{row['strategy']}{row['fast']}{row['slow']}{row['regime']}"
 
     @property
@@ -224,26 +255,45 @@ class PaperTradingBot:
             if price is None:
                 price = self.last_prices.get(pos.asset, pos.entry_price)
             pos_value += pos.quantity * price
-
         self.equity = self.cash + pos_value
         self.peak_equity = max(self.peak_equity, self.equity)
 
+    def _set_paused(self, reason: str, log_message: str) -> None:
+        self.paused = True
+        self.pause_reason = reason
+        self.log_once(reason, log_message)
+        self.save_state()
+
     def should_pause(self) -> bool:
         if self.current_drawdown >= MAX_DRAWDOWN_STOP:
+            self._set_paused(
+                "max_drawdown_stop",
+                f"Risk stop triggered: drawdown={self.current_drawdown * 100:.2f}% >= {MAX_DRAWDOWN_STOP * 100:.2f}%"
+            )
             return True
         if self.daily_loss >= DAILY_LOSS_STOP:
+            self._set_paused(
+                "daily_loss_stop",
+                f"Risk stop triggered: daily_loss={self.daily_loss * 100:.2f}% >= {DAILY_LOSS_STOP * 100:.2f}%"
+            )
             return True
         return False
 
+    def in_cooldown(self, symbol: str) -> bool:
+        until_raw = self.symbol_cooldowns.get(symbol, "")
+        until_dt = self.parse_dt(until_raw)
+        if until_dt is None:
+            return False
+        return self.now_utc() < until_dt
+
     def open_position(self, row: dict, price: float) -> Optional[Position]:
         if self.paused or self.should_pause():
-            self.paused = True
-            self.save_state()
-            self.log("Trading paused by risk rules")
             return None
 
         symbol = self.symbol_for_row(row)
         if symbol in self.positions:
+            return None
+        if self.in_cooldown(symbol):
             return None
 
         target_weight = float(row.get("targetweight", row.get("target_weight", 0.0)))
@@ -277,7 +327,7 @@ class PaperTradingBot:
             entry_price=entry_price,
             stop_price=stop_price,
             take_profit=take_profit,
-            opened_at=datetime.now(timezone.utc).isoformat(),
+            opened_at=self.iso_now(),
             target_weight=target_weight,
             risk_per_trade=risk_per_trade,
         )
@@ -285,6 +335,7 @@ class PaperTradingBot:
         self.positions[symbol] = pos
         self.last_prices[symbol] = price
         self.last_prices[pos.asset] = price
+        self.clear_log_once()
         self.update_equity()
         self.save_state()
 
@@ -313,10 +364,12 @@ class PaperTradingBot:
         self.cash += pos.quantity * exit_price - pos.quantity * exit_price * FEE_PCT
         self.realized_pnl += net
         self.consecutive_losses = self.consecutive_losses + 1 if net < 0 else 0
+        cooldown_until = self.now_utc().timestamp() + REENTRY_COOLDOWN_SECONDS
+        self.symbol_cooldowns[symbol] = datetime.fromtimestamp(cooldown_until, tz=timezone.utc).isoformat()
 
         trade = Trade(
             trade_id=str(uuid.uuid4())[:8],
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=self.iso_now(),
             symbol=symbol,
             asset=pos.asset,
             timeframe=pos.timeframe,
@@ -359,13 +412,8 @@ class PaperTradingBot:
                 self.close_position(pos_symbol, price, "takeprofit")
 
         self.update_equity()
-
-        if self.should_pause():
-            self.paused = True
-            self.save_state()
-            self.log("Risk stop triggered")
-        else:
-            self.save_state()
+        self.should_pause()
+        self.save_state()
 
     def ingest_prices(self, price_map: Dict[str, float]) -> None:
         for sym, price in price_map.items():
@@ -376,10 +424,7 @@ class PaperTradingBot:
             return
 
         self.update_equity()
-        if self.daily_loss >= DAILY_LOSS_STOP:
-            self.paused = True
-            self.save_state()
-            self.log("Daily loss stop reached")
+        if self.should_pause():
             return
 
         selected = sorted(
@@ -404,6 +449,13 @@ class PaperTradingBot:
 
         self.save_state()
 
+    def resume_trading(self) -> None:
+        self.paused = False
+        self.pause_reason = ""
+        self.clear_log_once()
+        self.save_state()
+        self.log("Trading resumed manually")
+
     def status(self) -> dict:
         self.update_equity()
 
@@ -424,11 +476,13 @@ class PaperTradingBot:
             "drawdown": drawdown,
             "daily_loss": daily_loss,
             "paused": paused,
+            "pause_reason": self.pause_reason,
             "consecutive_losses": consecutive_losses,
             "open_positions": open_positions,
             "realized_pnl": realized_pnl,
             "peakequity": peak_equity,
             "dailyloss": daily_loss,
+            "pausereason": self.pause_reason,
             "consecutivelosses": consecutive_losses,
             "openpositions": open_positions,
             "realizedpnl": realized_pnl,
@@ -445,6 +499,7 @@ class PaperTradingBot:
             f"Open positions: {s['openpositions']}",
             f"Realized PnL: {s['realizedpnl']:.2f}",
             f"Paused: {s['paused']}",
+            f"Pause reason: {s['pausereason'] or 'none'}",
             f"Consecutive losses: {s['consecutivelosses']}",
         ]
         return "\n".join(lines)
@@ -454,8 +509,8 @@ class PaperTradingBot:
             "status": self.status(),
             "positions": [asdict(p) for p in self.positions.values()],
             "trades": [asdict(t) for t in self.trade_history[-20:]],
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-            "updatedat": datetime.now(timezone.utc).isoformat(),
+            "updated_at": self.iso_now(),
+            "updatedat": self.iso_now(),
         }
         self._atomic_write_text(REPORTJSON, json.dumps(data, indent=2))
 

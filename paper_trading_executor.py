@@ -1,7 +1,7 @@
 import json
 import uuid
 from dataclasses import dataclass, asdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -23,6 +23,8 @@ MAX_PORTFOLIO_RISK = 0.03
 MAX_DRAWDOWN_STOP = 0.07
 DAILY_LOSS_STOP = 0.02
 REENTRY_COOLDOWN_SECONDS = 1800
+GLOBAL_RISK_COOLDOWN_SECONDS = 6 * 3600
+MAX_OPEN_TRADES = 3
 
 
 @dataclass
@@ -79,11 +81,13 @@ class PaperTradingBot:
         self.equity = INITIAL_EQUITY
         self.peak_equity = INITIAL_EQUITY
         self.daily_start_equity = INITIAL_EQUITY
+        self.daily_reset_date = ""
         self.positions: Dict[str, Position] = {}
         self.trade_history: List[Trade] = []
         self.last_prices: Dict[str, float] = {}
         self.paused = False
         self.pause_reason = ""
+        self.paused_until = ""
         self.last_risk_event = ""
         self.consecutive_losses = 0
         self.realized_pnl = 0.0
@@ -101,6 +105,9 @@ class PaperTradingBot:
 
     def iso_now(self) -> str:
         return self.now_utc().isoformat()
+
+    def utc_today(self) -> str:
+        return self.now_utc().date().isoformat()
 
     def parse_dt(self, value: str) -> Optional[datetime]:
         if not value:
@@ -171,8 +178,10 @@ class PaperTradingBot:
         self.daily_start_equity = float(
             state.get("dailystartequity", state.get("daily_start_equity", INITIAL_EQUITY))
         )
+        self.daily_reset_date = str(state.get("daily_reset_date", state.get("dailyresetdate", "")) or "")
         self.paused = bool(state.get("paused", False))
         self.pause_reason = str(state.get("pause_reason", state.get("pausereason", "")) or "")
+        self.paused_until = str(state.get("paused_until", state.get("pauseduntil", "")) or "")
         self.last_risk_event = str(state.get("last_risk_event", state.get("lastriskevent", "")) or "")
         self.consecutive_losses = int(state.get("consecutivelosses", state.get("consecutive_losses", 0)))
         self.realized_pnl = float(state.get("realizedpnl", state.get("realized_pnl", 0.0)))
@@ -189,13 +198,16 @@ class PaperTradingBot:
             self.trade_history.append(Trade(**self._normalize_trade_dict(t)))
 
     def save_state(self) -> None:
+        now = self.iso_now()
         state = {
             "cash": self.cash,
             "equity": self.equity,
             "peak_equity": self.peak_equity,
             "daily_start_equity": self.daily_start_equity,
+            "daily_reset_date": self.daily_reset_date,
             "paused": self.paused,
             "pause_reason": self.pause_reason,
+            "paused_until": self.paused_until,
             "last_risk_event": self.last_risk_event,
             "consecutive_losses": self.consecutive_losses,
             "realized_pnl": self.realized_pnl,
@@ -203,17 +215,19 @@ class PaperTradingBot:
             "trade_history": [asdict(t) for t in self.trade_history],
             "last_prices": self.last_prices,
             "symbol_cooldowns": self.symbol_cooldowns,
-            "updated_at": self.iso_now(),
+            "updated_at": now,
             "peakequity": self.peak_equity,
             "dailystartequity": self.daily_start_equity,
+            "dailyresetdate": self.daily_reset_date,
             "pausereason": self.pause_reason,
+            "pauseduntil": self.paused_until,
             "lastriskevent": self.last_risk_event,
             "consecutivelosses": self.consecutive_losses,
             "realizedpnl": self.realized_pnl,
             "tradehistory": [asdict(t) for t in self.trade_history],
             "lastprices": self.last_prices,
             "symbolcooldowns": self.symbol_cooldowns,
-            "updatedat": self.iso_now(),
+            "updatedat": now,
         }
         self._atomic_write_text(self.state_path, json.dumps(state, indent=2))
 
@@ -258,9 +272,49 @@ class PaperTradingBot:
         self.equity = self.cash + pos_value
         self.peak_equity = max(self.peak_equity, self.equity)
 
-    def _set_paused(self, reason: str, log_message: str) -> None:
+    def maybe_reset_daily_baseline(self) -> None:
+        today = self.utc_today()
+        if self.daily_reset_date == today:
+            return
+
+        self.update_equity()
+        self.daily_start_equity = self.equity
+        self.daily_reset_date = today
+
+        if self.paused and self.pause_reason == "daily_loss_stop":
+            paused_until_dt = self.parse_dt(self.paused_until)
+            if paused_until_dt is None or self.now_utc() >= paused_until_dt:
+                self.paused = False
+                self.pause_reason = ""
+                self.paused_until = ""
+                self.clear_log_once()
+                self.log("Daily baseline reset; daily loss pause cleared")
+
+        self.save_state()
+        self.log(f"Daily baseline reset to equity={self.daily_start_equity:.2f} for {today}")
+
+    def maybe_release_pause(self) -> None:
+        if not self.paused:
+            return
+
+        paused_until_dt = self.parse_dt(self.paused_until)
+        if paused_until_dt is None:
+            return
+
+        if self.now_utc() >= paused_until_dt:
+            old_reason = self.pause_reason
+            self.paused = False
+            self.pause_reason = ""
+            self.paused_until = ""
+            self.clear_log_once()
+            self.save_state()
+            self.log(f"Pause expired automatically (previous reason: {old_reason})")
+
+    def _set_paused(self, reason: str, log_message: str, cooldown_seconds: int = 0) -> None:
         self.paused = True
         self.pause_reason = reason
+        if cooldown_seconds > 0:
+            self.paused_until = (self.now_utc() + timedelta(seconds=cooldown_seconds)).isoformat()
         self.log_once(reason, log_message)
         self.save_state()
 
@@ -268,15 +322,25 @@ class PaperTradingBot:
         if self.current_drawdown >= MAX_DRAWDOWN_STOP:
             self._set_paused(
                 "max_drawdown_stop",
-                f"Risk stop triggered: drawdown={self.current_drawdown * 100:.2f}% >= {MAX_DRAWDOWN_STOP * 100:.2f}%"
+                f"Risk stop triggered: drawdown={self.current_drawdown * 100:.2f}% >= {MAX_DRAWDOWN_STOP * 100:.2f}%",
+                cooldown_seconds=GLOBAL_RISK_COOLDOWN_SECONDS,
             )
             return True
+
         if self.daily_loss >= DAILY_LOSS_STOP:
+            next_midnight = datetime.combine(
+                self.now_utc().date() + timedelta(days=1),
+                datetime.min.time(),
+                tzinfo=timezone.utc,
+            )
+            seconds_until_reset = max(1, int((next_midnight - self.now_utc()).total_seconds()))
             self._set_paused(
                 "daily_loss_stop",
-                f"Risk stop triggered: daily_loss={self.daily_loss * 100:.2f}% >= {DAILY_LOSS_STOP * 100:.2f}%"
+                f"Risk stop triggered: daily_loss={self.daily_loss * 100:.2f}% >= {DAILY_LOSS_STOP * 100:.2f}%",
+                cooldown_seconds=seconds_until_reset,
             )
             return True
+
         return False
 
     def in_cooldown(self, symbol: str) -> bool:
@@ -287,7 +351,13 @@ class PaperTradingBot:
         return self.now_utc() < until_dt
 
     def open_position(self, row: dict, price: float) -> Optional[Position]:
+        self.maybe_release_pause()
+        self.maybe_reset_daily_baseline()
+
         if self.paused or self.should_pause():
+            return None
+
+        if len(self.positions) >= MAX_OPEN_TRADES:
             return None
 
         symbol = self.symbol_for_row(row)
@@ -364,8 +434,7 @@ class PaperTradingBot:
         self.cash += pos.quantity * exit_price - pos.quantity * exit_price * FEE_PCT
         self.realized_pnl += net
         self.consecutive_losses = self.consecutive_losses + 1 if net < 0 else 0
-        cooldown_until = self.now_utc().timestamp() + REENTRY_COOLDOWN_SECONDS
-        self.symbol_cooldowns[symbol] = datetime.fromtimestamp(cooldown_until, tz=timezone.utc).isoformat()
+        self.symbol_cooldowns[symbol] = (self.now_utc() + timedelta(seconds=REENTRY_COOLDOWN_SECONDS)).isoformat()
 
         trade = Trade(
             trade_id=str(uuid.uuid4())[:8],
@@ -398,6 +467,9 @@ class PaperTradingBot:
         return trade
 
     def process_price(self, symbol: str, price: float) -> None:
+        self.maybe_release_pause()
+        self.maybe_reset_daily_baseline()
+
         self.last_prices[symbol] = price
 
         for pos_symbol, pos in list(self.positions.items()):
@@ -420,11 +492,18 @@ class PaperTradingBot:
             self.process_price(sym, float(price))
 
     def maybe_rebalance(self) -> None:
+        self.maybe_release_pause()
+        self.maybe_reset_daily_baseline()
+
         if self.paused:
             return
 
         self.update_equity()
         if self.should_pause():
+            return
+
+        if len(self.positions) >= MAX_OPEN_TRADES:
+            self.save_state()
             return
 
         selected = sorted(
@@ -434,6 +513,9 @@ class PaperTradingBot:
         )
 
         for row in selected:
+            if len(self.positions) >= MAX_OPEN_TRADES:
+                break
+
             symbol = self.symbol_for_row(row)
             if symbol in self.positions:
                 continue
@@ -452,6 +534,7 @@ class PaperTradingBot:
     def resume_trading(self) -> None:
         self.paused = False
         self.pause_reason = ""
+        self.paused_until = ""
         self.clear_log_once()
         self.save_state()
         self.log("Trading resumed manually")
@@ -477,12 +560,14 @@ class PaperTradingBot:
             "daily_loss": daily_loss,
             "paused": paused,
             "pause_reason": self.pause_reason,
+            "paused_until": self.paused_until,
             "consecutive_losses": consecutive_losses,
             "open_positions": open_positions,
             "realized_pnl": realized_pnl,
             "peakequity": peak_equity,
             "dailyloss": daily_loss,
             "pausereason": self.pause_reason,
+            "pauseduntil": self.paused_until,
             "consecutivelosses": consecutive_losses,
             "openpositions": open_positions,
             "realizedpnl": realized_pnl,
@@ -500,6 +585,7 @@ class PaperTradingBot:
             f"Realized PnL: {s['realizedpnl']:.2f}",
             f"Paused: {s['paused']}",
             f"Pause reason: {s['pausereason'] or 'none'}",
+            f"Paused until: {s['pauseduntil'] or 'none'}",
             f"Consecutive losses: {s['consecutivelosses']}",
         ]
         return "\n".join(lines)

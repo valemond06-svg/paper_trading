@@ -14,11 +14,14 @@ output/*
 !output/integration_bundle.json
 !output/price_feed_state.json
 
-# LOG — MAI nel repository
+# LOG — MAI nel repository (testo e JSONL)
 output/*.log
 output/*.txt
+output/*.jsonl
 output/integration_manager_log.txt
+output/integration_manager_log.jsonl
 output/paper_trading_log.txt
+output/paper_trading_log.jsonl
 output/price_feed_log.txt
 
 # Python

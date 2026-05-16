@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 from price_feed_adapter import PriceFeedAdapter
 from paper_trading_executor import PaperTradingBot
+from utils.logging_utils import json_log, redact
 
 load_dotenv()
 
@@ -18,7 +19,7 @@ OUT = Path("output")
 OUT.mkdir(exist_ok=True)
 
 MANAGER_STATE = OUT / "integration_manager_state.json"
-MANAGER_LOG = OUT / "integration_manager_log.txt"
+MANAGER_LOG = OUT / "integration_manager_log.jsonl"
 FEED_STATE_JSON = OUT / "price_feed_state.json"
 INTEGRATION_BUNDLE = OUT / "integration_bundle.json"
 
@@ -36,22 +37,6 @@ RUN_BUDGET_SECONDS = 210
 RUN_SLEEP_SECONDS = DEFAULT_POLL_SECONDS
 # Increased from 10s to 15s for a more conservative deadline cutoff.
 SAFETY_MARGIN_SECONDS = 15
-
-# ─── Security helper ──────────────────────────────────────────────────────────
-# Redacta token Telegram da qualsiasi stringa prima che venga scritta nei log.
-_TOKEN_RE = re.compile(r"\b\d{6,}:[A-Za-z0-9_\-]{20,}\b")
-_URL_TOKEN_RE = re.compile(r"(https?://api\.telegram\.org/bot)[^/\s\"']+")
-
-
-def _redact(text: str) -> str:
-    """Sostituisce token Telegram (e URL che li contengono) con ***REDACTED***."""
-    if not text:
-        return text
-    text = _TOKEN_RE.sub("***REDACTED***", str(text))
-    text = _URL_TOKEN_RE.sub(r"\1***REDACTED***", text)
-    if TELEGRAM_BOT_TOKEN:
-        text = text.replace(TELEGRAM_BOT_TOKEN, "***REDACTED***")
-    return text
 
 
 class IntegrationManager:
@@ -87,13 +72,11 @@ class IntegrationManager:
         tmp_path.write_text(text, encoding="utf-8")
         tmp_path.replace(path)
 
-    def log(self, message: str) -> None:
-        # Redacta segreti PRIMA di scrivere su file o stampare
-        safe = _redact(str(message))
-        line = f"{self._now_iso()} | {safe}"
-        with MANAGER_LOG.open("a", encoding="utf-8") as f:
-            f.write(line + "\n")
-        print(line)
+    def log(self, message: str, level: str = "INFO", **data) -> None:
+        safe = redact(str(message))
+        json_log(MANAGER_LOG, event=safe, component="integration_manager",
+                 level=level, **data)
+        print(f"{self._now_iso()} | {safe}")
 
     def load_state(self) -> None:
         if not MANAGER_STATE.exists():

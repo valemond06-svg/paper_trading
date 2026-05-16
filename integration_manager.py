@@ -406,6 +406,8 @@ class IntegrationManager:
 
             except Exception as e:
                 self.log(f"Telegram loop error: {e}")
+                if self.telegram_enabled:
+                    await asyncio.to_thread(self.send_telegram_message, f"Telegram loop error: {e}")
 
             await asyncio.sleep(TELEGRAM_POLL_SLEEP)
 

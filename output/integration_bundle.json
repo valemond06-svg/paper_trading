@@ -3,7 +3,7 @@
     "paused": false,
     "last_prices": {
       "BNBUSDT": 655.58,
-      "BTCUSDT": 78176.16
+      "BTCUSDT": 78191.85
     },
     "telegram_enabled": true,
     "telegram_chat_id_configured": true
@@ -109,12 +109,12 @@
     }
   ],
   "feed_snapshot": {
-    "timestamp": "2026-05-16T18:08:56.400281+00:00",
+    "timestamp": "2026-05-16T18:13:59.577731+00:00",
     "prices": {
       "BNBUSDT": 655.58,
-      "BTCUSDT": 78176.16
+      "BTCUSDT": 78191.85
     },
     "source": "binance-data"
   },
-  "updated_at": "2026-05-16T18:08:59.297387+00:00"
+  "updated_at": "2026-05-16T18:14:02.297669+00:00"
 }

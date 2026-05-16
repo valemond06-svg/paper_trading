@@ -1,9 +1,9 @@
 {
   "status": {
     "cash": 0.0761,
-    "equity": 965.728,
+    "equity": 966.0679,
     "peak_equity": 1016.0334,
-    "drawdown": 0.0495,
+    "drawdown": 0.0492,
     "daily_loss": 0.0,
     "paused": false,
     "pause_reason": "",
@@ -99,6 +99,6 @@
       "reason": "stoploss"
     }
   ],
-  "updated_at": "2026-05-16T15:10:02.020473+00:00",
-  "updatedat": "2026-05-16T15:10:02.020479+00:00"
+  "updated_at": "2026-05-16T15:14:58.076006+00:00",
+  "updatedat": "2026-05-16T15:14:58.076011+00:00"
 }

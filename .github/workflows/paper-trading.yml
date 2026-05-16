@@ -2,12 +2,6 @@ name: run-bot
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *"
-
-concurrency:
-  group: paper-trading-bot-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
   run-bot:
@@ -15,6 +9,7 @@ jobs:
     timeout-minutes: 6
     env:
       PYTHONUNBUFFERED: "1"
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
       - name: Checkout repo

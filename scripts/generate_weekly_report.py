@@ -4,8 +4,8 @@ generate_weekly_report.py
 
 Wrapper minimale per report settimanale BTC_4H_BREAKOUT_DAILY_REGIME.
 Legge solo:
-  - output/state.json
-  - output/paper_trading_report.json
+  - output/paper_trading_state.json
+  - output/paper_trading_runtime.json
 
 Genera:
   - docs/reports/week_YYYY_WW.md
@@ -29,8 +29,8 @@ from pathlib import Path
 # Paths — tutti relativi alla root del repo
 # ---------------------------------------------------------------------------
 REPO_ROOT = Path(__file__).resolve().parent.parent
-STATE_FILE = REPO_ROOT / "output" / "state.json"
-REPORT_FILE = REPO_ROOT / "output" / "paper_trading_report.json"
+STATE_FILE = REPO_ROOT / "output" / "paper_trading_state.json"
+REPORT_FILE = REPO_ROOT / "output" / "paper_trading_runtime.json"
 OUTPUT_DIR = REPO_ROOT / "docs" / "reports"
 
 
@@ -181,13 +181,13 @@ def generate_report(state: dict, report_data: dict, year: int, week: int) -> str
     stats = compute_stats(weekly_trades)
     now = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    # Dati da state.json
+    # Dati da paper_trading_state.json
     equity = state.get("equity", "N/A")
     regime = state.get("daily_regime", "N/A")
     max_dd = state.get("max_drawdown", "N/A")
-    last_update = state.get("last_update", "N/A")
-    open_position = state.get("open_position", None)
-    trade_count_total = state.get("trade_count", "N/A")
+    last_update = state.get("last_update", state.get("updated_at", "N/A"))
+    open_position = state.get("open_position", None) or state.get("positions", None)
+    trade_count_total = state.get("trade_count", len(state.get("trade_history", state.get("tradehistory", []))))
 
     pf_val = stats["profit_factor"]
     pf_status = ""
@@ -248,7 +248,7 @@ def generate_report(state: dict, report_data: dict, year: int, week: int) -> str
             lines.append(format_trade_row(t))
     else:
         lines.append("> *Nessun trade chiuso in questa settimana.*")
-        lines.append(">")  
+        lines.append(">")
         lines.append("> Possibili cause: regime FLAT per tutta la settimana, "
                      "nessun breakout valido, o bot non attivo.")
 
@@ -262,7 +262,7 @@ def generate_report(state: dict, report_data: dict, year: int, week: int) -> str
         f"- [ ] Net PnL > 0",
         f"- [ ] Nessun risk event HIGH/CRITICAL questa settimana",
         f"- [ ] Slippage medio nella norma (< 0.15%)",
-        f"- [ ] `state.json` aggiornato correttamente",
+        f"- [ ] `paper_trading_state.json` aggiornato correttamente",
         f"- [ ] Trade documentati in `docs/trade_review.md`",
         f"",
         f"---",
@@ -283,7 +283,7 @@ def generate_report(state: dict, report_data: dict, year: int, week: int) -> str
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Genera report settimanale da state.json e paper_trading_report.json"
+        description="Genera report settimanale da paper_trading_state.json e paper_trading_runtime.json"
     )
     parser.add_argument(
         "--week",

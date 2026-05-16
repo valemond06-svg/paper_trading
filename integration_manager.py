@@ -29,9 +29,13 @@ DEFAULT_POLL_SECONDS = 5
 TELEGRAM_TIMEOUT = (10, 25)
 TELEGRAM_LONG_POLL_TIMEOUT = 20
 TELEGRAM_POLL_SLEEP = 1.0
-RUN_BUDGET_SECONDS = 270
+# Reduced from 270s to 210s to avoid overlap with the external 5-min cron trigger.
+# Budget breakdown: ~30s GitHub Actions setup + 195s effective loop + ~10s commit/push = ~235s total,
+# safely under the 300s cron interval even with GitHub infrastructure delays.
+RUN_BUDGET_SECONDS = 210
 RUN_SLEEP_SECONDS = DEFAULT_POLL_SECONDS
-SAFETY_MARGIN_SECONDS = 10
+# Increased from 10s to 15s for a more conservative deadline cutoff.
+SAFETY_MARGIN_SECONDS = 15
 
 # ─── Security helper ──────────────────────────────────────────────────────────
 # Redacta token Telegram da qualsiasi stringa prima che venga scritta nei log.

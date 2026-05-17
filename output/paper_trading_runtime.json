@@ -1,10 +1,10 @@
 {
   "status": {
     "cash": 0.0761,
-    "equity": 967.6489,
+    "equity": 968.0479,
     "peak_equity": 1016.0334,
-    "drawdown": 0.0476,
-    "daily_loss": 0.002,
+    "drawdown": 0.0472,
+    "daily_loss": 0.0016,
     "paused": false,
     "pause_reason": "",
     "paused_until": "",
@@ -12,7 +12,7 @@
     "open_positions": 2,
     "realized_pnl": -35.7343,
     "peakequity": 1016.0334,
-    "dailyloss": 0.002,
+    "dailyloss": 0.0016,
     "pausereason": "",
     "pauseduntil": "",
     "consecutivelosses": 3,
@@ -99,6 +99,6 @@
       "reason": "stoploss"
     }
   ],
-  "updated_at": "2026-05-17T06:29:02.214397+00:00",
-  "updatedat": "2026-05-17T06:29:02.214404+00:00"
+  "updated_at": "2026-05-17T06:34:13.687676+00:00",
+  "updatedat": "2026-05-17T06:34:13.687683+00:00"
 }

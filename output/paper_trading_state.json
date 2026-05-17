@@ -1,9 +1,9 @@
 {
   "cash": 0.0761202580727911,
-  "equity": 969.5550304611653,
+  "equity": 970.5745857918874,
   "peak_equity": 1016.0333923359659,
-  "daily_start_equity": 964.5255049100558,
-  "daily_reset_date": "2026-05-16",
+  "daily_start_equity": 969.5550304611653,
+  "daily_reset_date": "2026-05-17",
   "paused": false,
   "pause_reason": "",
   "paused_until": "",
@@ -91,18 +91,18 @@
     }
   ],
   "last_prices": {
-    "BNBUSDT": 656.11,
-    "BTCUSDT": 78168.43,
-    "BNBUSDT1hSmaCrossRegime1545200": 656.11,
-    "BNBUSDT4hSmaCrossRegime1236120": 656.11,
+    "BNBUSDT": 656.8,
+    "BTCUSDT": 78220.75,
+    "BNBUSDT1hSmaCrossRegime1545200": 656.8,
+    "BNBUSDT4hSmaCrossRegime1236120": 656.8,
     "BTCUSDT1hSmaCrossRegime1545200": 77999.36
   },
   "symbol_cooldowns": {},
   "risk_stop_active": false,
-  "updated_at": "2026-05-16T23:59:01.640445+00:00",
+  "updated_at": "2026-05-17T00:04:19.546029+00:00",
   "peakequity": 1016.0333923359659,
-  "dailystartequity": 964.5255049100558,
-  "dailyresetdate": "2026-05-16",
+  "dailystartequity": 969.5550304611653,
+  "dailyresetdate": "2026-05-17",
   "pausereason": "",
   "pauseduntil": "",
   "lastriskevent": "",
@@ -159,12 +159,12 @@
     }
   ],
   "lastprices": {
-    "BNBUSDT": 656.11,
-    "BTCUSDT": 78168.43,
-    "BNBUSDT1hSmaCrossRegime1545200": 656.11,
-    "BNBUSDT4hSmaCrossRegime1236120": 656.11,
+    "BNBUSDT": 656.8,
+    "BTCUSDT": 78220.75,
+    "BNBUSDT1hSmaCrossRegime1545200": 656.8,
+    "BNBUSDT4hSmaCrossRegime1236120": 656.8,
     "BTCUSDT1hSmaCrossRegime1545200": 77999.36
   },
   "symbolcooldowns": {},
-  "updatedat": "2026-05-16T23:59:01.640445+00:00"
+  "updatedat": "2026-05-17T00:04:19.546029+00:00"
 }

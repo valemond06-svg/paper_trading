@@ -2,18 +2,18 @@
   "manager": {
     "paused": false,
     "last_prices": {
-      "BNBUSDT": 651.89,
-      "BTCUSDT": 77869.58
+      "BNBUSDT": 651.96,
+      "BTCUSDT": 77884.49
     },
     "telegram_enabled": true,
     "telegram_chat_id_configured": true
   },
   "executor": {
     "cash": 0.0761,
-    "equity": 963.3195,
+    "equity": 963.4229,
     "peak_equity": 1016.0334,
-    "drawdown": 0.0519,
-    "daily_loss": 0.0064,
+    "drawdown": 0.0518,
+    "daily_loss": 0.0063,
     "paused": false,
     "pause_reason": "",
     "paused_until": "",
@@ -21,7 +21,7 @@
     "open_positions": 2,
     "realized_pnl": -35.7343,
     "peakequity": 1016.0334,
-    "dailyloss": 0.0064,
+    "dailyloss": 0.0063,
     "pausereason": "",
     "pauseduntil": "",
     "consecutivelosses": 3,
@@ -109,12 +109,12 @@
     }
   ],
   "feed_snapshot": {
-    "timestamp": "2026-05-17T02:14:01.424558+00:00",
+    "timestamp": "2026-05-17T02:18:57.077068+00:00",
     "prices": {
-      "BNBUSDT": 651.89,
-      "BTCUSDT": 77869.58
+      "BNBUSDT": 651.96,
+      "BTCUSDT": 77884.49
     },
     "source": "binance-data"
   },
-  "updated_at": "2026-05-17T02:14:03.870258+00:00"
+  "updated_at": "2026-05-17T02:18:59.052568+00:00"
 }

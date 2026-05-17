@@ -22,21 +22,26 @@ MANAGER_STATE = OUT / "integration_manager_state.json"
 MANAGER_LOG = OUT / "integration_manager_log.jsonl"
 FEED_STATE_JSON = OUT / "price_feed_state.json"
 INTEGRATION_BUNDLE = OUT / "integration_bundle.json"
+PAPER_TRADING_LOG = OUT / "paper_trading_log.txt"
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAMBOTTOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID") or os.getenv("TELEGRAMCHATID")
+# TELEGRAM_ALLOWED_CHAT_ID: chat ID autorizzato per comandi critici.
+# Default: TELEGRAM_CHAT_ID per retrocompatibilità.
+TELEGRAM_ALLOWED_CHAT_ID = (
+    os.getenv("TELEGRAM_ALLOWED_CHAT_ID")
+    or TELEGRAM_CHAT_ID
+)
 
 DEFAULT_POLL_SECONDS = 5
 TELEGRAM_TIMEOUT = (10, 25)
 TELEGRAM_LONG_POLL_TIMEOUT = 20
 TELEGRAM_POLL_SLEEP = 1.0
 # Reduced from 270s to 210s to avoid overlap with the external 5-min cron trigger.
-# Budget breakdown: ~30s GitHub Actions setup + 195s effective loop + ~10s commit/push = ~235s total,
-# safely under the 300s cron interval even with GitHub infrastructure delays.
 RUN_BUDGET_SECONDS = 210
 RUN_SLEEP_SECONDS = DEFAULT_POLL_SECONDS
-# Increased from 10s to 15s for a more conservative deadline cutoff.
 SAFETY_MARGIN_SECONDS = 15
+LOG_TAIL_LINES = 20
 
 
 class IntegrationManager:
@@ -121,13 +126,15 @@ class IntegrationManager:
     def telegram_api_url(self, method: str) -> str:
         return f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/{method}"
 
-    def send_telegram_message(self, text: str) -> bool:
+    def send_telegram_message(self, text: str, chat_id: Optional[str] = None) -> bool:
         if not self.telegram_enabled:
             return False
 
+        target = chat_id or TELEGRAM_CHAT_ID
         payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
+            "chat_id": target,
             "text": text[:4000],
+            "parse_mode": "HTML",
         }
 
         try:
@@ -304,7 +311,7 @@ class IntegrationManager:
         executor = bundle.get("executor", {})
 
         lines = [
-            "PAPER TRADING REPORT",
+            "\U0001f4cb <b>PAPER TRADING REPORT</b>",
             "",
             f"Paused: {manager.get('paused')}",
             f"Telegram enabled: {manager.get('telegram_enabled')}",
@@ -318,6 +325,71 @@ class IntegrationManager:
             f"Paused until: {executor.get('pauseduntil', executor.get('paused_until', '')) or 'none'}",
         ]
         return "\n".join(lines)
+
+    def render_status_telegram(self) -> str:
+        """Risposta formattata per /status: equity, drawdown, posizioni, regime BTC."""
+        s = self.status()
+        btc_price = self.last_prices.get("BTCUSDT", self.last_prices.get("BTC", 0.0))
+
+        # Tenta di recuperare il regime dal bundle se disponibile
+        regime_str = "unknown"
+        if INTEGRATION_BUNDLE.exists():
+            try:
+                bundle = json.loads(INTEGRATION_BUNDLE.read_text(encoding="utf-8"))
+                feed = bundle.get("feed_snapshot") or {}
+                regime_str = str(feed.get("regime", feed.get("btc_regime", "unknown")))
+            except Exception:
+                pass
+
+        lines = [
+            "\U0001f4ca <b>STATUS</b>",
+            f"\U0001f4b0 Equity: <b>{s['equity']:.2f} USDT</b>",
+            f"\U0001f4c9 Drawdown: {s['drawdown'] * 100:.2f}%",
+            f"\U0001f4c8 Daily loss: {s['dailyloss'] * 100:.2f}%",
+            f"\U0001f4bc Open positions: {s['openpositions']}",
+            f"\U0001f534 Paused: {s['paused'] or s['manager_paused']}",
+            f"\U0001f7e1 BTC price: {btc_price:.2f} USDT" if btc_price else "",
+            f"\U0001f30d BTC regime: {regime_str}",
+            f"\u23f0 Updated: {self._now_iso()[:19]}Z",
+        ]
+        return "\n".join(l for l in lines if l)
+
+    def render_log_tail(self, n: int = LOG_TAIL_LINES) -> str:
+        """Restituisce gli ultimi n log da paper_trading_log.txt."""
+        # Cerca anche nei log alternativi
+        candidates = [
+            PAPER_TRADING_LOG,
+            OUT / "paper_trading_log.txt",
+            OUT / "integration_manager_log.jsonl",
+        ]
+        log_path = None
+        for c in candidates:
+            if c.exists():
+                log_path = c
+                break
+
+        if log_path is None:
+            return "\u26a0\ufe0f No log file found."
+
+        try:
+            lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+            tail = lines[-n:] if len(lines) >= n else lines
+            # Per file JSONL mostra solo il campo 'event'
+            if log_path.suffix == ".jsonl":
+                parsed = []
+                for line in tail:
+                    try:
+                        obj = json.loads(line)
+                        ts = obj.get("ts", obj.get("timestamp", ""))
+                        ev = obj.get("event", line)
+                        parsed.append(f"{str(ts)[:19]} | {ev}" if ts else ev)
+                    except Exception:
+                        parsed.append(line)
+                tail = parsed
+            header = f"\U0001f4dc <b>Last {len(tail)} log lines</b> ({log_path.name})"
+            return header + "\n" + "\n".join(tail)
+        except Exception as e:
+            return f"\u26a0\ufe0f Log read error: {e}"
 
     def export_bundle(self) -> dict:
         feed_snapshot = None
@@ -363,7 +435,7 @@ class IntegrationManager:
         self.save_state()
         self.log("Paused by command")
         if self.telegram_enabled:
-            self.send_telegram_message("Manager paused.")
+            self.send_telegram_message("\u23f8 Manager paused.")
 
     def resume(self) -> None:
         self.paused = False
@@ -376,19 +448,50 @@ class IntegrationManager:
         self.save_state()
         self.log("Resumed by command")
         if self.telegram_enabled:
-            self.send_telegram_message("Manager resumed.")
+            self.send_telegram_message("\u25b6\ufe0f Manager resumed.")
 
-    async def process_telegram_command(self, text: str) -> Optional[str]:
-        cmd = (text or "").strip().lower()
+    async def process_telegram_command(
+        self, text: str, from_chat_id: Optional[str] = None
+    ) -> Optional[str]:
+        cmd = (text or "").strip().lower().split()[0] if text.strip() else ""
 
+        # -----------------------------------------------------------------
+        # Comandi pubblici (solo lettura)
+        # -----------------------------------------------------------------
         if cmd in ("/start", "start"):
-            return "Bot online.\nCommands: /status /positions /trades /pause /resume /report /cycle /help"
+            return (
+                "\U0001f916 <b>Bot online.</b>\n"
+                "Comandi disponibili:\n"
+                "/status \u2014 equity, drawdown, posizioni, regime BTC\n"
+                "/log \u2014 ultimi 20 log\n"
+                "/report \u2014 report runtime completo\n"
+                "/pause \u2014 pausa manuale (solo chat autorizzata)\n"
+                "/resume \u2014 riprendi (solo chat autorizzata)\n"
+                "/positions \u2014 posizioni aperte\n"
+                "/trades \u2014 ultimi trade chiusi\n"
+                "/help \u2014 questo messaggio"
+            )
 
         if cmd in ("/help", "help"):
-            return "Commands: /status /positions /trades /pause /resume /report /cycle /help"
+            return (
+                "\U0001f4cb <b>Comandi disponibili:</b>\n"
+                "/status \u2014 equity, drawdown, posizioni, regime BTC\n"
+                "/log \u2014 ultimi 20 log\n"
+                "/report \u2014 report runtime completo\n"
+                "/pause \u2014 pausa manuale (solo chat autorizzata)\n"
+                "/resume \u2014 riprendi (solo chat autorizzata)\n"
+                "/positions \u2014 posizioni aperte\n"
+                "/trades \u2014 ultimi trade chiusi"
+            )
 
         if cmd in ("/status", "status"):
-            return self.summary_text()
+            return self.render_status_telegram()
+
+        if cmd in ("/log", "log"):
+            return self.render_log_tail(LOG_TAIL_LINES)
+
+        if cmd in ("/report", "report"):
+            return self.render_report()
 
         if cmd in ("/positions", "positions"):
             return self.render_positions()
@@ -396,32 +499,37 @@ class IntegrationManager:
         if cmd in ("/trades", "trades"):
             return self.render_trades()
 
-        if cmd in ("/pause", "pause"):
-            self.pause()
-            return "Paused."
+        # -----------------------------------------------------------------
+        # Comandi critici: solo TELEGRAM_ALLOWED_CHAT_ID
+        # -----------------------------------------------------------------
+        if cmd in ("/pause", "pause", "/resume", "resume", "/cycle", "cycle"):
+            if TELEGRAM_ALLOWED_CHAT_ID and str(from_chat_id) != str(TELEGRAM_ALLOWED_CHAT_ID):
+                return "\u26d4 Accesso negato: comando riservato alla chat autorizzata."
 
-        if cmd in ("/resume", "resume"):
-            self.resume()
-            return "Resumed."
+            if cmd in ("/pause", "pause"):
+                self.pause()
+                return "\u23f8 Pausa attivata. Il bot non eseguir\u00e0 nuovi trade."
 
-        if cmd in ("/report", "report"):
-            return self.render_report()
+            if cmd in ("/resume", "resume"):
+                self.resume()
+                return "\u25b6\ufe0f Ripresa confermata. Il bot \u00e8 di nuovo operativo."
 
-        if cmd in ("/cycle", "cycle"):
-            try:
-                await self.cycle_once()
-                return "Cycle completed."
-            except Exception as e:
-                return f"Cycle error: {e}"
+            if cmd in ("/cycle", "cycle"):
+                try:
+                    await self.cycle_once()
+                    return "\u2705 Ciclo completato."
+                except Exception as e:
+                    return f"\u26a0\ufe0f Cycle error: {e}"
 
-        return "Unknown command. Use /help"
+        return "\u2753 Comando sconosciuto. Usa /help per la lista."
 
     async def telegram_loop(self) -> None:
+        """Long-polling loop Telegram. Gira in asyncio.gather() con manager_loop."""
         if not self.telegram_enabled:
-            self.log("Telegram disabled: missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID")
+            self.log("Telegram disabled: TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID mancanti")
             return
 
-        self.log("Telegram loop started")
+        self.log("Telegram polling loop avviato")
 
         while True:
             try:
@@ -437,6 +545,7 @@ class IntegrationManager:
                     chat = message.get("chat", {})
                     chat_id = str(chat.get("id", ""))
 
+                    # Filtro: accetta solo messaggi dal CHAT_ID configurato
                     if TELEGRAM_CHAT_ID and chat_id != str(TELEGRAM_CHAT_ID):
                         continue
 
@@ -444,9 +553,13 @@ class IntegrationManager:
                     if not text:
                         continue
 
-                    response = await self.process_telegram_command(text)
+                    response = await self.process_telegram_command(
+                        text, from_chat_id=chat_id
+                    )
                     if response:
-                        await asyncio.to_thread(self.send_telegram_message, response)
+                        await asyncio.to_thread(
+                            self.send_telegram_message, response, chat_id
+                        )
 
             except Exception as e:
                 self.log(f"Telegram loop error: {e}")
@@ -468,15 +581,30 @@ class IntegrationManager:
             await asyncio.sleep(poll_seconds)
 
     async def run_forever(self, poll_seconds: int = DEFAULT_POLL_SECONDS) -> None:
+        """Modalit\u00e0 persistente: manager_loop + telegram_loop in parallelo.
+        Usata quando il file viene eseguito direttamente: python integration_manager.py
+        Il bot Telegram NON blocca il loop di trading.
+        Se il bot Telegram cade, il runner continua.
+        """
+        tasks = [asyncio.create_task(self.manager_loop(poll_seconds=poll_seconds))]
+
         if self.telegram_enabled:
-            await asyncio.gather(
-                self.manager_loop(poll_seconds=poll_seconds),
-                self.telegram_loop(),
-            )
+            tasks.append(asyncio.create_task(self.telegram_loop()))
+            self.log("run_forever: manager + telegram in parallelo")
         else:
-            await self.manager_loop(poll_seconds=poll_seconds)
+            self.log("run_forever: solo manager (Telegram disabilitato)")
+
+        # gather con return_exceptions=True: se telegram_loop crasha,
+        # manager_loop continua a girare.
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for r in results:
+            if isinstance(r, Exception):
+                self.log(f"Task terminato con errore: {r}")
 
     async def run_budgeted(self, run_budget_seconds: int = RUN_BUDGET_SECONDS) -> None:
+        """Modalit\u00e0 cron/GitHub Actions: esegue cicli fino al budget temporale.
+        Il loop Telegram NON viene avviato in questa modalit\u00e0 (non persistente).
+        """
         started_at = datetime.now(timezone.utc)
         deadline_ts = asyncio.get_running_loop().time() + max(
             1, run_budget_seconds - SAFETY_MARGIN_SECONDS
@@ -525,13 +653,32 @@ class IntegrationManager:
         )
 
 
-async def _main() -> None:
+async def _main_standalone() -> None:
+    """Entrypoint per `python integration_manager.py`.
+    Avvia run_forever() con manager + Telegram in parallelo.
+    Fallback silente se il token manca: solo manager, nessun crash.
+    """
+    if not TELEGRAM_BOT_TOKEN:
+        print(
+            "[integration_manager] ATTENZIONE: TELEGRAM_BOT_TOKEN non trovato in .env. "
+            "Il bot Telegram non verr\u00e0 avviato. Il runner continua normalmente."
+        )
+    manager = IntegrationManager()
+    await manager.run_forever()
+
+
+async def _main_budgeted() -> None:
     manager = IntegrationManager()
     await manager.run_budgeted(run_budget_seconds=RUN_BUDGET_SECONDS)
 
 
 if __name__ == "__main__":
+    import sys
+    # python integration_manager.py --budgeted  => modalit\u00e0 cron
+    # python integration_manager.py             => modalit\u00e0 persistente con Telegram
+    budgeted_mode = "--budgeted" in sys.argv
+    entry = _main_budgeted if budgeted_mode else _main_standalone
     try:
-        asyncio.run(_main())
+        asyncio.run(entry())
     except KeyboardInterrupt:
-        print("Stopped by user")
+        print("[integration_manager] Stopped by user")

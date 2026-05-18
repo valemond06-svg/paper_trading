@@ -251,3 +251,24 @@
 2026-05-16T13:30:46.867251+00:00 | Bot initialized
 2026-05-16T13:35:33.677018+00:00 | Bot initialized
 2026-05-16T13:40:36.532692+00:00 | Bot initialized
+2026-05-16T13:50:34.699641+00:00 | Bot initialized
+2026-05-16T13:50:35.775309+00:00 | Daily baseline reset; daily loss pause cleared
+2026-05-16T13:50:35.775955+00:00 | Daily baseline reset to equity=964.53 for 2026-05-16
+2026-05-16T13:50:35.777854+00:00 | OPEN BNBUSDT1hSmaCrossRegime1545200 qty=1.187283 entry=652.7062 stop=639.6521 tp=672.2874 cash=189.58
+2026-05-16T13:50:35.778497+00:00 | OPEN BNBUSDT4hSmaCrossRegime1236120 qty=0.290333 entry=652.7062 stop=646.1791 tp=662.4968 cash=0.08
+2026-05-16T13:55:32.028293+00:00 | Bot initialized
+2026-05-16T14:05:38.520909+00:00 | Bot initialized
+2026-05-16T14:10:40.394834+00:00 | Bot initialized
+2026-05-16T14:15:39.952480+00:00 | Bot initialized
+2026-05-16T14:20:35.306184+00:00 | Bot initialized
+2026-05-16T14:25:32.798435+00:00 | Bot initialized
+2026-05-16T14:30:50.634304+00:00 | Bot initialized
+2026-05-16T14:35:34.748872+00:00 | Bot initialized
+2026-05-16T14:40:33.195139+00:00 | Bot initialized
+2026-05-16T14:45:40.692795+00:00 | Bot initialized
+2026-05-16T14:50:35.539096+00:00 | Bot initialized
+2026-05-16T14:55:32.575496+00:00 | Bot initialized
+2026-05-16T15:05:42.015450+00:00 | Bot initialized
+2026-05-16T15:10:38.072332+00:00 | Bot initialized
+2026-05-16T15:20:48.901623+00:00 | Bot initialized
+2026-05-16T15:35:52.130351+00:00 | Bot initialized

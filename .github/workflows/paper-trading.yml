@@ -39,21 +39,47 @@ jobs:
       - name: Ensure output folder exists
         run: mkdir -p output
 
+      - name: Show initial repo state
+        run: |
+          echo "HEAD:"
+          git log --oneline -1
+          echo
+          echo "BRANCH:"
+          git branch --show-current
+          echo
+          echo "STATUS:"
+          git status --short
+          echo
+          echo "OUTPUT BEFORE RUN:"
+          ls -la output || true
+
       - name: Check required plan file
         run: test -f output/paper_trading_plan.json || (echo "Missing output/paper_trading_plan.json" && exit 1)
 
-      - name: Run integration manager
+      - name: Run integration manager (budgeted)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python -u integration_manager.py
+        run: python -u integration_manager.py --budgeted
 
-      - name: Show git status
+      - name: Show final repo state
+        if: always()
         run: |
+          echo "HEAD AFTER RUN:"
+          git log --oneline -1
+          echo
+          echo "STATUS AFTER RUN:"
           git status --short
+          echo
+          echo "OUTPUT AFTER RUN:"
           ls -la output || true
+          echo
+          echo "LATEST STATE FILES:"
+          test -f output/paper_trading_state.json && tail -n 40 output/paper_trading_state.json || true
+          test -f output/paper_trading_runtime.json && tail -n 40 output/paper_trading_runtime.json || true
 
       - name: Commit output state
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

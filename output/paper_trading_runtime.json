@@ -1,23 +1,54 @@
 {
   "status": {
-    "cash": 964.5255,
-    "equity": 964.5255,
+    "cash": 0.0761,
+    "equity": 968.2252,
     "peak_equity": 1016.0334,
-    "drawdown": 0.0507,
-    "daily_loss": 0.0355,
-    "paused": true,
-    "pause_reason": "daily_loss_stop",
+    "drawdown": 0.0471,
+    "daily_loss": 0.0014,
+    "paused": false,
+    "pause_reason": "",
+    "paused_until": "",
     "consecutive_losses": 3,
-    "open_positions": 0,
+    "open_positions": 2,
     "realized_pnl": -35.7343,
     "peakequity": 1016.0334,
-    "dailyloss": 0.0355,
-    "pausereason": "daily_loss_stop",
+    "dailyloss": 0.0014,
+    "pausereason": "",
+    "pauseduntil": "",
     "consecutivelosses": 3,
-    "openpositions": 0,
+    "openpositions": 2,
     "realizedpnl": -35.7343
   },
-  "positions": [],
+  "positions": [
+    {
+      "symbol": "BNBUSDT1hSmaCrossRegime1545200",
+      "asset": "BNBUSDT",
+      "timeframe": "1h",
+      "strategy": "SmaCrossRegime",
+      "side": "long",
+      "quantity": 1.1872830901565572,
+      "entry_price": 652.70619,
+      "stop_price": 639.6520662,
+      "take_profit": 672.2873757,
+      "opened_at": "2026-05-16T13:50:35.777441+00:00",
+      "target_weight": 0.803448968723516,
+      "risk_per_trade": 0.01
+    },
+    {
+      "symbol": "BNBUSDT4hSmaCrossRegime1236120",
+      "asset": "BNBUSDT",
+      "timeframe": "4h",
+      "strategy": "SmaCrossRegime",
+      "side": "long",
+      "quantity": 0.29033333117994503,
+      "entry_price": 652.70619,
+      "stop_price": 646.1791281,
+      "take_profit": 662.4967828499999,
+      "opened_at": "2026-05-16T13:50:35.777923+00:00",
+      "target_weight": 0.1965510312764839,
+      "risk_per_trade": 0.004
+    }
+  ],
   "trades": [
     {
       "trade_id": "553e1ec9",
@@ -68,6 +99,6 @@
       "reason": "stoploss"
     }
   ],
-  "updated_at": "2026-05-16T13:44:56.536917+00:00",
-  "updatedat": "2026-05-16T13:44:56.536923+00:00"
+  "updated_at": "2026-05-17T07:08:56.114137+00:00",
+  "updatedat": "2026-05-17T07:08:56.114144+00:00"
 }

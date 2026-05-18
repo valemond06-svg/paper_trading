@@ -1,0 +1,63 @@
+name: Weekly Report Generator
+
+on:
+  schedule:
+    # Ogni lunedì alle 08:00 UTC
+    - cron: '0 8 * * 1'
+  # Permette trigger manuale
+  workflow_dispatch:
+    inputs:
+      week:
+        description: 'Settimana ISO (es. 2026-W20). Lascia vuoto per settimana corrente.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write  # Solo per commit del report generato
+
+jobs:
+  generate-report:
+    name: Generate Weekly Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check required output files exist
+        run: |
+          if [ ! -f output/state.json ]; then
+            echo "[SKIP] output/state.json non trovato — il bot non ha ancora girato."
+            exit 0
+          fi
+          if [ ! -f output/paper_trading_report.json ]; then
+            echo "[SKIP] output/paper_trading_report.json non trovato — nessun report disponibile."
+            exit 0
+          fi
+          echo "FILE_OK=true" >> $GITHUB_ENV
+
+      - name: Generate weekly report
+        if: env.FILE_OK == 'true'
+        run: |
+          WEEK_ARG=""
+          if [ -n "${{ github.event.inputs.week }}" ]; then
+            WEEK_ARG="--week ${{ github.event.inputs.week }}"
+          fi
+          python scripts/generate_weekly_report.py $WEEK_ARG
+
+      - name: Commit report
+        if: env.FILE_OK == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/reports/
+          # Commit solo se ci sono modifiche
+          git diff --cached --quiet || git commit -m "chore(report): weekly report $(date -u +%Y-W%V)"
+          git push

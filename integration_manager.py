@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Set
@@ -9,7 +10,8 @@ import requests
 from dotenv import load_dotenv
 
 from price_feed_adapter import PriceFeedAdapter
-from paper_trading_executor import PaperTradingBot
+from paper_trading_executor import PaperTradingBot, PLANJSON
+from utils.logging_utils import json_log, redact
 
 load_dotenv()
 
@@ -17,26 +19,34 @@ OUT = Path("output")
 OUT.mkdir(exist_ok=True)
 
 MANAGER_STATE = OUT / "integration_manager_state.json"
-MANAGER_LOG = OUT / "integration_manager_log.txt"
+MANAGER_LOG = OUT / "integration_manager_log.jsonl"
 FEED_STATE_JSON = OUT / "price_feed_state.json"
 INTEGRATION_BUNDLE = OUT / "integration_bundle.json"
+PAPER_TRADING_LOG = OUT / "paper_trading_log.txt"
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAMBOTTOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID") or os.getenv("TELEGRAMCHATID")
+# TELEGRAM_ALLOWED_CHAT_ID: chat ID autorizzato per comandi critici.
+# Default: TELEGRAM_CHAT_ID per retrocompatibilità.
+TELEGRAM_ALLOWED_CHAT_ID = (
+    os.getenv("TELEGRAM_ALLOWED_CHAT_ID")
+    or TELEGRAM_CHAT_ID
+)
 
 DEFAULT_POLL_SECONDS = 5
 TELEGRAM_TIMEOUT = (10, 25)
 TELEGRAM_LONG_POLL_TIMEOUT = 20
 TELEGRAM_POLL_SLEEP = 1.0
-RUN_BUDGET_SECONDS = 210
+RUN_BUDGET_SECONDS = 270
 RUN_SLEEP_SECONDS = DEFAULT_POLL_SECONDS
-SAFETY_MARGIN_SECONDS = 10
+SAFETY_MARGIN_SECONDS = 15
+LOG_TAIL_LINES = 20
 
 
 class IntegrationManager:
     def __init__(self) -> None:
         self.feed = PriceFeedAdapter()
-        self.executor = PaperTradingBot()
+        self.executor = PaperTradingBot(PLANJSON)
         self.executor.load_state()
 
         self.paused = False
@@ -66,11 +76,11 @@ class IntegrationManager:
         tmp_path.write_text(text, encoding="utf-8")
         tmp_path.replace(path)
 
-    def log(self, message: str) -> None:
-        line = f"{self._now_iso()} | {message}"
-        with MANAGER_LOG.open("a", encoding="utf-8") as f:
-            f.write(line + "\n")
-        print(line)
+    def log(self, message: str, level: str = "INFO", **data) -> None:
+        safe = redact(str(message))
+        json_log(MANAGER_LOG, event=safe, component="integration_manager",
+                 level=level, **data)
+        print(f"{self._now_iso()} | {safe}")
 
     def load_state(self) -> None:
         if not MANAGER_STATE.exists():
@@ -115,13 +125,15 @@ class IntegrationManager:
     def telegram_api_url(self, method: str) -> str:
         return f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/{method}"
 
-    def send_telegram_message(self, text: str) -> bool:
+    def send_telegram_message(self, text: str, chat_id: Optional[str] = None) -> bool:
         if not self.telegram_enabled:
             return False
 
+        target = chat_id or TELEGRAM_CHAT_ID
         payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
+            "chat_id": target,
             "text": text[:4000],
+            "parse_mode": "HTML",
         }
 
         try:
@@ -260,272 +272,100 @@ class IntegrationManager:
             f"Paused: {s['paused'] or s['manager_paused']}",
             f"Pause reason: {s.get('pausereason', s.get('pause_reason', '')) or 'none'}",
             f"Paused until: {s.get('pauseduntil', s.get('paused_until', '')) or 'none'}",
-            f"Consecutive losses: {s['consecutivelosses']}",
-            f"Last price symbols: {', '.join(s['last_price_symbols']) if s['last_price_symbols'] else 'none'}",
         ]
+        open_pos = self.executor.positions
+        if open_pos:
+            lines.append("Open positions:")
+            for sym, pos in open_pos.items():
+                price = self.last_prices.get(sym, pos.entry_price)
+                pnl = pos.pnl(price)
+                lines.append(
+                    f"  {sym}: entry={pos.entry_price:.4f} "
+                    f"current={price:.4f} pnl={pnl:.4f}"
+                )
         return "\n".join(lines)
 
-    def render_positions(self) -> str:
-        if not self.executor.positions:
-            return "No open positions."
-
-        lines = []
-        for p in self.executor.positions.values():
-            lines.append(
-                f"{p.asset} {p.timeframe} {p.strategy} "
-                f"qty={p.quantity:.6f} entry={p.entry_price:.4f} "
-                f"stop={p.stop_price:.4f} tp={p.take_profit:.4f}"
-            )
-        return "\n".join(lines)
-
-    def render_trades(self, limit: int = 10) -> str:
-        trades = self.executor.trade_history[-limit:]
-        if not trades:
-            return "No closed trades."
-
-        lines = []
-        for t in trades:
-            lines.append(
-                f"{t.asset} {t.timeframe} {t.strategy} "
-                f"side={t.side} net={t.net_pnl:.4f} fees={t.fees:.4f} "
-                f"reason={t.reason} at {t.timestamp}"
-            )
-        return "\n".join(lines)
-
-    def render_report(self) -> str:
-        bundle = self.export_bundle()
-        manager = bundle.get("manager", {})
-        executor = bundle.get("executor", {})
-
-        lines = [
-            "PAPER TRADING REPORT",
-            "",
-            f"Paused: {manager.get('paused')}",
-            f"Telegram enabled: {manager.get('telegram_enabled')}",
-            f"Equity: {executor.get('equity', 0):.2f}",
-            f"Cash: {executor.get('cash', 0):.2f}",
-            f"Drawdown: {executor.get('drawdown', 0) * 100:.2f}%",
-            f"Daily loss: {executor.get('dailyloss', executor.get('daily_loss', 0)) * 100:.2f}%",
-            f"Open positions: {executor.get('openpositions', executor.get('open_positions', 0))}",
-            f"Realized PnL: {executor.get('realizedpnl', executor.get('realized_pnl', 0)):.2f}",
-            f"Pause reason: {executor.get('pausereason', executor.get('pause_reason', '')) or 'none'}",
-            f"Paused until: {executor.get('pauseduntil', executor.get('paused_until', '')) or 'none'}",
-        ]
-        return "\n".join(lines)
-
-    def export_bundle(self) -> dict:
-        feed_snapshot = None
-        if FEED_STATE_JSON.exists():
+    def _handle_command(self, text: str, chat_id: str) -> None:
+        text = text.strip().lower()
+        if text == "/status":
+            self.send_telegram_message(self.summary_text(), chat_id=chat_id)
+        elif text == "/pause":
+            self.paused = True
+            self.save_state()
+            self.send_telegram_message("Manager paused.", chat_id=chat_id)
+        elif text == "/resume":
+            self.paused = False
+            self.save_state()
+            self.send_telegram_message("Manager resumed.", chat_id=chat_id)
+        elif text == "/log":
             try:
-                feed_snapshot = json.loads(FEED_STATE_JSON.read_text(encoding="utf-8"))
+                lines = MANAGER_LOG.read_text(encoding="utf-8").splitlines()
+                tail = "\n".join(lines[-LOG_TAIL_LINES:])
+                self.send_telegram_message(f"Last {LOG_TAIL_LINES} log lines:\n{tail}", chat_id=chat_id)
             except Exception as e:
-                self.log(f"Feed snapshot read failed: {e}")
+                self.send_telegram_message(f"Error reading log: {e}", chat_id=chat_id)
+        else:
+            self.send_telegram_message(
+                "Unknown command. Available: /status /pause /resume /log",
+                chat_id=chat_id,
+            )
 
-        data = {
-            "manager": {
-                "paused": self.paused,
-                "last_prices": self.last_prices,
-                "telegram_enabled": self.telegram_enabled,
-                "telegram_chat_id_configured": bool(TELEGRAM_CHAT_ID),
-            },
-            "executor": self.executor.status(),
-            "positions": [vars(p) for p in self.executor.positions.values()],
-            "trades": [vars(t) for t in self.executor.trade_history[-20:]],
-            "feed_snapshot": feed_snapshot,
-            "updated_at": self._now_iso(),
-        }
-        self._atomic_write_text(INTEGRATION_BUNDLE, json.dumps(data, indent=2))
-        return data
+    def process_telegram_updates(self) -> None:
+        updates = self.get_telegram_updates()
+        for update in updates:
+            update_id = update.get("update_id")
+            if update_id is not None:
+                self.telegram_offset = update_id + 1
 
-    async def cycle_once(self) -> None:
-        prices = await self.feed.run_once()
-        self.sync_prices_to_executor(prices)
-        self.maybe_trade()
-        self.export_bundle()
-        self.notify_new_opens_and_closes()
+            message = update.get("message", {})
+            text = message.get("text", "")
+            chat = message.get("chat", {})
+            chat_id = str(chat.get("id", ""))
 
+            allowed = str(TELEGRAM_ALLOWED_CHAT_ID or "")
+            if allowed and chat_id != allowed:
+                continue
+
+            if text.startswith("/"):
+                self._handle_command(text, chat_id)
+
+        if updates:
+            self.save_state()
+
+    def _maybe_send_summary(self) -> None:
+        if not self.telegram_enabled:
+            return
         summary = self.summary_text()
         if summary != self.last_summary_text:
-            self.log(summary)
+            self.send_telegram_message(summary)
             self.last_summary_text = summary
             self.save_state()
 
-    def pause(self) -> None:
-        self.paused = True
-        self.executor.paused = True
-        self.executor.save_state()
-        self.save_state()
-        self.log("Paused by command")
-        if self.telegram_enabled:
-            self.send_telegram_message("Manager paused.")
+    async def run_loop(self) -> None:
+        self.log("Starting integration manager run loop")
+        deadline = asyncio.get_event_loop().time() + RUN_BUDGET_SECONDS
 
-    def resume(self) -> None:
-        self.paused = False
-        if hasattr(self.executor, "resume_trading"):
-            self.executor.resume_trading()
-        else:
-            self.executor.paused = False
-            self.executor.save_state()
-
-        self.save_state()
-        self.log("Resumed by command")
-        if self.telegram_enabled:
-            self.send_telegram_message("Manager resumed.")
-
-    async def process_telegram_command(self, text: str) -> Optional[str]:
-        cmd = (text or "").strip().lower()
-
-        if cmd in ("/start", "start"):
-            return "Bot online.\nCommands: /status /positions /trades /pause /resume /report /cycle /help"
-
-        if cmd in ("/help", "help"):
-            return "Commands: /status /positions /trades /pause /resume /report /cycle /help"
-
-        if cmd in ("/status", "status"):
-            return self.summary_text()
-
-        if cmd in ("/positions", "positions"):
-            return self.render_positions()
-
-        if cmd in ("/trades", "trades"):
-            return self.render_trades()
-
-        if cmd in ("/pause", "pause"):
-            self.pause()
-            return "Paused."
-
-        if cmd in ("/resume", "resume"):
-            self.resume()
-            return "Resumed."
-
-        if cmd in ("/report", "report"):
-            return self.render_report()
-
-        if cmd in ("/cycle", "cycle"):
+        while asyncio.get_event_loop().time() < deadline - SAFETY_MARGIN_SECONDS:
             try:
-                await self.cycle_once()
-                return "Cycle completed."
-            except Exception as e:
-                return f"Cycle error: {e}"
+                prices = self.feed.fetch_prices()
+                if prices:
+                    self.sync_prices_to_executor(prices)
+                    self.maybe_trade()
+                    self.notify_new_opens_and_closes()
+                    self._maybe_send_summary()
 
-        return "Unknown command. Use /help"
-
-    async def telegram_loop(self) -> None:
-        if not self.telegram_enabled:
-            self.log("Telegram disabled: missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID")
-            return
-
-        self.log("Telegram loop started")
-
-        while True:
-            try:
-                updates = await asyncio.to_thread(self.get_telegram_updates)
-
-                for upd in updates:
-                    update_id = upd.get("update_id")
-                    if update_id is not None:
-                        self.telegram_offset = update_id + 1
-                        self.save_state()
-
-                    message = upd.get("message", {})
-                    chat = message.get("chat", {})
-                    chat_id = str(chat.get("id", ""))
-
-                    if TELEGRAM_CHAT_ID and chat_id != str(TELEGRAM_CHAT_ID):
-                        continue
-
-                    text = message.get("text", "")
-                    if not text:
-                        continue
-
-                    response = await self.process_telegram_command(text)
-                    if response:
-                        await asyncio.to_thread(self.send_telegram_message, response)
+                self.process_telegram_updates()
 
             except Exception as e:
-                self.log(f"Telegram loop error: {e}")
+                self.log(f"Loop iteration error: {e}", level="ERROR")
 
-            await asyncio.sleep(TELEGRAM_POLL_SLEEP)
+            await asyncio.sleep(RUN_SLEEP_SECONDS)
 
-    async def manager_loop(self, poll_seconds: int = DEFAULT_POLL_SECONDS) -> None:
-        self.log(f"Integration loop started (poll_seconds={poll_seconds})")
+        self.log("Run loop budget exhausted, exiting")
 
-        while True:
-            try:
-                await self.cycle_once()
-            except Exception as e:
-                err = f"Manager error: {e}"
-                self.log(err)
-                if self.telegram_enabled:
-                    await asyncio.to_thread(self.send_telegram_message, err)
-
-            await asyncio.sleep(poll_seconds)
-
-    async def run_forever(self, poll_seconds: int = DEFAULT_POLL_SECONDS) -> None:
-        if self.telegram_enabled:
-            await asyncio.gather(
-                self.manager_loop(poll_seconds=poll_seconds),
-                self.telegram_loop(),
-            )
-        else:
-            await self.manager_loop(poll_seconds=poll_seconds)
-
-    async def run_budgeted(self, run_budget_seconds: int = RUN_BUDGET_SECONDS) -> None:
-        started_at = datetime.now(timezone.utc)
-        deadline_ts = asyncio.get_running_loop().time() + max(
-            1, run_budget_seconds - SAFETY_MARGIN_SECONDS
-        )
-
-        self.log(
-            f"Budgeted run started (budget={run_budget_seconds}s, "
-            f"sleep={RUN_SLEEP_SECONDS}s, safety_margin={SAFETY_MARGIN_SECONDS}s)"
-        )
-
-        cycle_count = 0
-
-        while True:
-            now_ts = asyncio.get_running_loop().time()
-            if now_ts >= deadline_ts:
-                break
-
-            try:
-                await self.cycle_once()
-                cycle_count += 1
-            except Exception as e:
-                err = f"Manager error: {e}"
-                self.log(err)
-                if self.telegram_enabled:
-                    await asyncio.to_thread(self.send_telegram_message, err)
-
-            now_ts = asyncio.get_running_loop().time()
-            if now_ts >= deadline_ts:
-                break
-
-            remaining = deadline_ts - now_ts
-            sleep_for = min(RUN_SLEEP_SECONDS, max(0, remaining))
-            if sleep_for > 0:
-                await asyncio.sleep(sleep_for)
-
-        finished_at = datetime.now(timezone.utc)
-        duration = (finished_at - started_at).total_seconds()
-
-        self.export_bundle()
-        self.executor.export_runtime_report()
-        self.executor.save_state()
-        self.save_state()
-
-        self.log(
-            f"Budgeted run finished | cycles={cycle_count} | duration={duration:.1f}s"
-        )
-
-
-async def _main() -> None:
-    manager = IntegrationManager()
-    await manager.run_budgeted(run_budget_seconds=RUN_BUDGET_SECONDS)
+    def run(self) -> None:
+        asyncio.run(self.run_loop())
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(_main())
-    except KeyboardInterrupt:
-        print("Stopped by user")
+    IntegrationManager().run()

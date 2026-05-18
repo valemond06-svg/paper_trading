@@ -1,17 +1,48 @@
+# Segreti e variabili d'ambiente
 .env
+.env.*
+!.env.example
 
+# Output di runtime — solo i file di stato necessari al bot sono tracciati
 output/*
 !output/
 !output/paper_trading_plan.json
 !output/paper_trading_state.json
 !output/paper_trading_runtime.json
 !output/paper_trading_trades.csv
-!output/paper_trading_log.txt
 !output/integration_manager_state.json
-!output/integration_manager_log.txt
 !output/integration_bundle.json
 !output/price_feed_state.json
 
+# LOG — MAI nel repository (testo e JSONL)
+output/*.log
+output/*.txt
+output/*.jsonl
+output/integration_manager_log.txt
+output/integration_manager_log.jsonl
+output/paper_trading_log.txt
+output/paper_trading_log.jsonl
+output/price_feed_log.txt
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# IDE e OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Archivi
 archive_legacy_backup.zip
+*.zip
+*.tar.gz
